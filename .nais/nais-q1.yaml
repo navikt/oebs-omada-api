@@ -1,0 +1,46 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: oebs-template-api-q1
+  namespace: team-oebs
+  labels:
+    app: oebs-template-api-q1
+    team: team-oebs
+spec:
+  image: {{ image }}
+  port: 8080
+  replicas:
+    min: 1
+    max: 1
+
+  resources:
+    requests:
+      cpu: 400m
+      memory: 1024Mi
+    limits:
+      cpu: 4000m
+      memory: 2048Mi
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+      tenant: trygdeetaten.no
+  envFrom:
+    - secret: main-manager-q1
+
+  accessPolicy:
+    outbound:
+      external:
+        - host: nav-qa.template.no
+        - host: a34duvw10783.devillo.no
+        - ipv4: 10.53.136.176
+          ports:
+            - port: 1606
+
+  prometheus:
+    enabled: true
+    path: /actuator/prometheus
+
+  ingresses:
+    - "https://oebs-template-api-q1.intern.dev.nav.no"
+    - "https://oebs-template-api-q1.ekstern.dev.nav.no"

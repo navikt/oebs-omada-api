@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="oebs-api-ve-q1_oebsq2-0.4.7-nais" />
+        <module name="oebs-api-ve-p_oebsp-0.5.2-nais-released (ikke released)" />
+        <module name="oebs-api-u1" />
+        <module name="oebs-api-ve-u1_oebst2-0.3.5-nais" />
+        <module name="oebs-api-ve-q1_oebsq2-0.4.8-nais-released" />
+        <module name="oebs-api-u1.oebsq2" />
+        <module name="oebs-api-ve-0.5.4-nais-released (ikke prod)" />
+        <module name="oebs-mainmanager-api" />
+        <module name="oebs-api-ve-0.5.5-nais-released" />
+        <module name="oebs-api-ve-q" />
+        <module name="oebs-api-ve-p_oebsp-0.4.8-nais-released" />
+        <module name="oebs-api-ve-q1_oebsp-0.4.8-nais-released" />
+        <module name="oebs-api-ve-u1_oebst2 0.3.5 nais" />
+        <module name="oebs-api-ve-u1" />
+        <module name="oebs-api-ve" />
+        <module name="arena-api" />
+        <module name="oebs-api-ve-q1" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="oebs-api-ve" options="-parameters" />
+      <module name="oebs-api-ve-0.5.4-nais-released (ikke prod)" options="-parameters" />
+      <module name="oebs-api-ve-0.5.5-nais-released" options="-parameters" />
+      <module name="oebs-api-ve-0.6.1-nais-released" options="-parameters" />
+      <module name="oebs-api-ve-p_oebsp-0.4.8-nais-released" options="-parameters" />
+      <module name="oebs-api-ve-p_oebsp-0.5.2-nais-released (ikke released)" options="-parameters" />
+      <module name="oebs-api-ve-q1_oebsp-0.4.8-nais-released" options="-parameters" />
+      <module name="oebs-api-ve-q1_oebsq2-0.4.7-nais" options="-parameters" />
+      <module name="oebs-api-ve-q1_oebsq2-0.4.8-nais-released" options="-parameters" />
+      <module name="oebs-api-ve-u1" options="-parameters" />
+      <module name="oebs-mainmanager-api" options="-parameters" />
+    </option>
+  </component>
+</project>

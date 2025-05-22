@@ -1,0 +1,48 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+
+metadata:
+  name: oebs-template-api
+  namespace: team-oebs
+  labels:
+    app: oebs-template-api
+    team: team-oebs
+
+spec:
+  image: {{ image }}
+  port: 8080
+  replicas:
+    min: 3
+    max: 3
+
+  resources:
+    requests:
+      cpu: 400m
+      memory: 1024Mi
+    limits:
+      cpu: 4000m
+      memory: 2048Mi
+
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+      tenant: nav.no
+  envFrom:
+    - secret: template
+
+  accessPolicy:
+    outbound:
+      external:
+        - host: template.
+        - host: template.devillo.no
+        - ipv4: 111.11.11.111
+          ports:
+            - port: 1111
+  prometheus:
+    enabled: true
+    path: /actuator/prometheus
+
+  ingresses:
+    - "https://oebs-template.nav.no"
+    - "https://oebs-template.intern.nav.no"

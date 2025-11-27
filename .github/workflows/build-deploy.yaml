@@ -37,27 +37,33 @@ jobs:
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }} # required, but is defined as an organization variable
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }} # required, but is defined as an organization secret
           salsa: true
-
-      - name: Deploy to NAIS (T1)
+      - name: Deploy to NAIS (U1)
         if: startsWith(github.ref, 'refs/heads/dev/t1')  || github.ref == 'refs/heads/main'
         uses: nais/deploy/actions/deploy@v2
         env:
-          CLUSTER: dev-gcp
-          RESOURCE: .nais/nais-t1.yaml
+          CLUSTER: dev-fss
+          RESOURCE: .nais/nais-u1.yaml
           IMAGE: ${{ steps.docker-push.outputs.image }}
-
-      - name: Deploy to NAIS (Q1)
-        if: startsWith(github.ref, 'refs/heads/dev/q1')  || github.ref == 'refs/heads/main'
-        uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: dev-gcp
-          RESOURCE: .nais/nais-q1.yaml
-          IMAGE: ${{ steps.docker-push.outputs.image }}
-
-      - name: Deploy to NAIS produksjon
-        if: startsWith(github.ref, 'refs/heads/main')
-        uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: prod-gcp
-          RESOURCE: .nais/nais-p.yaml
-          IMAGE: ${{ steps.docker-push.outputs.image }}
+#      - name: Deploy to NAIS (T1)
+#        if: startsWith(github.ref, 'refs/heads/dev/t1')  || github.ref == 'refs/heads/main'
+#        uses: nais/deploy/actions/deploy@v2
+#        env:
+#          CLUSTER: dev-gcp
+#          RESOURCE: .nais/nais-t1.yaml
+#          IMAGE: ${{ steps.docker-push.outputs.image }}
+#
+#      - name: Deploy to NAIS (Q1)
+#        if: startsWith(github.ref, 'refs/heads/dev/q1')  || github.ref == 'refs/heads/main'
+#        uses: nais/deploy/actions/deploy@v2
+#        env:
+#          CLUSTER: dev-gcp
+#          RESOURCE: .nais/nais-q1.yaml
+#          IMAGE: ${{ steps.docker-push.outputs.image }}
+#
+#      - name: Deploy to NAIS produksjon
+#        if: startsWith(github.ref, 'refs/heads/main')
+#        uses: nais/deploy/actions/deploy@v2
+#        env:
+#          CLUSTER: prod-gcp
+#          RESOURCE: .nais/nais-p.yaml
+#          IMAGE: ${{ steps.docker-push.outputs.image }}

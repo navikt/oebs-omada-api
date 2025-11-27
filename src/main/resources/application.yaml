@@ -22,7 +22,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.OracleDialect
-      # database-platform: org.hibernate.dialect.OracleDialect
     show-sql: false
     open-in-view: false
   application:
@@ -41,12 +40,3 @@ springdoc:
   swagger-ui:
     disable-swagger-default-url: true
     tags-sorter: alpha
-
-#logging:
-  #level:
-    #com.zaxxer.hikari: DEBUG
-    # root: DEBUG
-    # org.springframework.web: debug
-    # org.hibernate: error
-    # org.springframework: DEBUG
-    # no.nav= DEBUG

@@ -1,11 +1,13 @@
+#TODO: Fikse NAIS.yaml
+#TODO: Endre accessPolicy
 apiVersion: nais.io/v1alpha1
 kind: Application
 
 metadata:
-  name: oebs-template-api
+  name: oebs-omada-api
   namespace: team-oebs
   labels:
-    app: oebs-template-api
+    app: oebs-omada-api
     team: team-oebs
 
 spec:
@@ -29,20 +31,11 @@ spec:
       allowAllUsers: true
       tenant: nav.no
   envFrom:
-    - secret: template
+    - secret: oebs-omada
 
-  accessPolicy:
-    outbound:
-      external:
-        - host: template.
-        - host: template.devillo.no
-        - ipv4: 111.11.11.111
-          ports:
-            - port: 1111
   prometheus:
     enabled: true
     path: /actuator/prometheus
 
   ingresses:
-    - "https://oebs-template.nav.no"
-    - "https://oebs-template.intern.nav.no"
+    - "https://oebs-omada-api.intern.nav.no"

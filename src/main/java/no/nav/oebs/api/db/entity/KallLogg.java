@@ -26,6 +26,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @Table(name = "XXRTV_template_LOGG")
+//TODO: Opprett Tabell for loggføring og SEQ
 public class KallLogg {
 
 	public static final String RETNING_INN = "INN";

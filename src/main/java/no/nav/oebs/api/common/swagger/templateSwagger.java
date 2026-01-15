@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import no.nav.oebs.api.config.SwaggerConfig;
 
 import java.lang.annotation.*;
-
+//TODO: Endre for å passe til OMADA integrasjon
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

@@ -3,11 +3,12 @@
 apiVersion: nais.io/v1alpha1
 kind: Application
 metadata:
-  name: oebs-omada-api-q1
+  name: oebs-omada-api-u1
   namespace: team-oebs
   labels:
-    app: oebs-omada-api-q1
+    app: oebs-omada-api-u1
     team: team-oebs
+
 spec:
   image: {{ image }}
   port: 8080
@@ -28,11 +29,11 @@ spec:
       allowAllUsers: true
       tenant: trygdeetaten.no
   envFrom:
-    - secret: oebs-omada-q1
+    - secret: oebs-omada-u1
 
   prometheus:
     enabled: true
     path: /actuator/prometheus
 
   ingresses:
-    - "https://oebs-omada-api-q1.intern.dev.nav.no"
+     - "https://oebs-omada-api-u1.intern.dev.nav.no"

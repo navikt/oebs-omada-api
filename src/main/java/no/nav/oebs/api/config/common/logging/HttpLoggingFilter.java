@@ -29,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpLoggingFilter extends OncePerRequestFilter {
 
+    private static final int CACHE_SIZE = 1024 * 1024;
+
 	private final KallLoggRepository kallLoggRepository;
 
 	public HttpLoggingFilter(KallLoggRepository kallLoggRepository) {
@@ -43,7 +45,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 
 		HttpServletRequest requestToUse = request;
 		if (!(request instanceof ContentCachingRequestWrapper)) {
-			requestToUse = new ContentCachingRequestWrapper(request);
+			requestToUse = new ContentCachingRequestWrapper(request, CACHE_SIZE);
 		}
 
 		HttpServletResponse responseToUse = response;
@@ -178,19 +180,17 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 	}
 
 	private void formatHeaders(StringBuilder builder, HttpHeaders headers) {
-		for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
-			builder.append(entry.getKey()).append(": ");
+        headers.forEach((name, values) -> {
+            builder.append(name).append(": ");
 
-			List<String> values = entry.getValue();
+            for (int i = 0; i < values.size(); i++) {
+                if (i > 0) builder.append(", ");
+                builder.append(values.get(i));
+            }
 
-			for (int i = 0; i < values.size(); i++) {
-				if (i > 0) {
-					builder.append(", ");
-				}
-				builder.append(values.get(i));
-			}
-			builder.append('\n');
-		}
+            builder.append('\n');
+        });
+
 	}
 
 	private void saveKallLogg(KallLogg kallLogg) {

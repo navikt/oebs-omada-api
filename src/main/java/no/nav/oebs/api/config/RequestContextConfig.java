@@ -3,7 +3,6 @@ package no.nav.oebs.api.config;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.filter.RequestContextFilter;
 
 /**
@@ -16,6 +15,9 @@ import org.springframework.web.filter.RequestContextFilter;
  *
  * RequestContextFilter sørger for at Spring's RequestContextHolder er tilgjengelig
  * også for requests som håndteres av Jersey servlet container.
+ *
+ * Note: RequestContextListener er allerede registrert av @EnableJwtTokenValidation
+ * og trenger derfor ikke defineres her.
  */
 @Configuration
 public class RequestContextConfig {
@@ -33,11 +35,6 @@ public class RequestContextConfig {
         registration.setOrder(Integer.MIN_VALUE); // Kjør først
         registration.setName("requestContextFilter");
         return registration;
-    }
-
-    @Bean
-    public RequestContextListener requestContextListener() {
-        return new RequestContextListener();
     }
 }
 

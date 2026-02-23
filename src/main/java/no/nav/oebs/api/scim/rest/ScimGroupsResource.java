@@ -18,7 +18,7 @@ import java.util.Optional;
  */
 @Slf4j
 @Component
-@Path("/scim/v2/Groups")
+@Path("/Groups")
 @Produces("application/scim+json")
 @Consumes("application/scim+json")
 public class ScimGroupsResource {

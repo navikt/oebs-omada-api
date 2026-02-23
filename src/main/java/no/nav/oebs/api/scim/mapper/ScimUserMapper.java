@@ -2,7 +2,6 @@ package no.nav.oebs.api.scim.mapper;
 
 import no.nav.oebs.api.scim.ScimGroupMembershipEntity;
 import no.nav.oebs.api.scim.ScimUserEntity;
-import org.apache.directory.scim.core.schema.SchemaRegistry;
 import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import org.apache.directory.scim.spec.resources.*;
 import org.apache.directory.scim.spec.schema.Meta;
@@ -50,9 +49,9 @@ public class ScimUserMapper {
 
         // Groups
         if (groups != null && !groups.isEmpty()) {
-            List<GroupMembership> groupMemberships = groups.stream()
+            List<UserGroup> groupMemberships = groups.stream()
                 .map(g -> {
-                    GroupMembership gm = new GroupMembership();
+                    UserGroup gm = new UserGroup();
                     gm.setValue(g.getScimGroupId());
                     gm.setDisplay(g.getScimDisplayName());
                     gm.setRef("https://example.com/scim/v2/Groups/" + g.getScimGroupId());

@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 @Entity
-@Table(name = "V_OMADA_ACTIVE_USERS", schema = "XXRTV")
+@Table(name = "OMADA_AKTIVE_BRUKERE_V", schema = "XXRTV")
 public class ScimUserEntity {
 
     @Id
@@ -31,7 +31,10 @@ public class ScimUserEntity {
     private String etterNavn;  // SCIM familyName
 
     @Column(name = "E_POST")
-    private String ePost;  // SCIM email
+    private String ePost;  // SCIM email (work)
+
+    @Column(name = "E_POST_2")
+    private String papEPost;  // Email from per_all_people_f (not used in SCIM yet)
 
     @Column(name = "START_DATO")
     private LocalDate startDato;
@@ -42,12 +45,12 @@ public class ScimUserEntity {
     @Column(name = "ACTIVE_FLAG")
     private String activeFlag;  // Y/N
 
-    // Enterprise extension data - join med V_OMADA_USER_ENTERPRISE_EXT
-    @Transient
-    private String enhetsId;  // SCIM department
+    // Enterprise extension data - now part of V_OMADA_ACTIVE_USERS
+    @Column(name = "ENHETS_ID")
+    private String enhetsId;  // SCIM department (last 4 digits of userName)
 
-    @Transient
-    private String arbeidsstedFylke;  // SCIM division
+    @Column(name = "ARBEIDSSTED_FYLKE")
+    private String arbeidsstedFylke;  // SCIM division (location_code)
 
     // Groups - hentes separat fra V_OMADA_USER_ALL_GROUPS
     @Transient

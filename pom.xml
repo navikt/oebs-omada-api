@@ -27,7 +27,7 @@
         <nimbus-jose-jwt.version>9.25.6</nimbus-jose-jwt.version>
         <springdoc-openapi.version>1.8.0</springdoc-openapi.version>
         <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
-        <lombok-version>1.18.34</lombok-version>
+        <lombok-version>1.18.38</lombok-version>
 
     </properties>
 

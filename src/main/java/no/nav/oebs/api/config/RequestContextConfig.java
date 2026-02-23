@@ -1,40 +1,37 @@
 package no.nav.oebs.api.config;
 
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.filter.RequestContextFilter;
 
 /**
  * Konfigurasjon for å eksponere Spring request context for Jersey servlet container.
  *
- * Dette er nødvendig fordi applikasjonen bruker både:
- * - Jersey (JAX-RS) for SCIM-endepunkter (Apache SCIMple)
- * - Spring DispatcherServlet for resten av applikasjonen
- * - NAV token validation som krever Spring request context
+ * NOTE: JWT token validation er fullstendig deaktivert via:
+ * - @EnableJwtTokenValidation er kommentert ut i SecurityConfig
+ * - EnableJwtTokenValidationConfiguration er ekskludert i application.yaml
+ *   (spring.autoconfigure.exclude)
  *
- * RequestContextFilter sørger for at Spring's RequestContextHolder er tilgjengelig
- * også for requests som håndteres av Jersey servlet container.
+ * RequestContextFilter og RequestContextListener er derfor ikke nødvendige
+ * siden de primært brukes av JWT token validation.
  *
- * Note: RequestContextListener er allerede registrert av @EnableJwtTokenValidation
- * og trenger derfor ikke defineres her.
+ * Når JWT validation aktiveres igjen, må både:
+ * 1. @EnableJwtTokenValidation aktiveres i SecurityConfig
+ * 2. EnableJwtTokenValidationConfiguration fjernes fra exclude-listen
+ * 3. RequestContextFilter/Listener aktiveres her
  */
 @Configuration
 public class RequestContextConfig {
 
-    /**
-     * Registrerer RequestContextFilter for å eksponere request context til alle servlets.
-     * Filteret kjører først (Integer.MIN_VALUE) for å sikre at context er tilgjengelig
-     * før andre filtre (som token validation) kjører.
-     */
+    // RequestContextFilter er kommentert ut - ikke nødvendig uten JWT validation
+    /*
     @Bean
     public FilterRegistrationBean<RequestContextFilter> requestContextFilter() {
         FilterRegistrationBean<RequestContextFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new RequestContextFilter());
         registration.addUrlPatterns("/*");
-        registration.setOrder(Integer.MIN_VALUE); // Kjør først
+        registration.setOrder(Integer.MIN_VALUE);
         registration.setName("requestContextFilter");
         return registration;
     }
+    */
 }
 

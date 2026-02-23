@@ -20,6 +20,7 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration
+      - no.nav.security.token.support.spring.EnableJwtTokenValidationConfiguration
   datasource:
     driver-class-name: oracle.jdbc.OracleDriver
     username: ${APPS_USER}

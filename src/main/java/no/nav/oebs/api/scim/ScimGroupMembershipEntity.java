@@ -27,9 +27,6 @@ public class ScimGroupMembershipEntity {
     @Column(name = "NAV_ID")
     private Long navId;
 
-    @Column(name = "FULLT_NAVN")
-    private String fulltNavn;
-
     @Column(name = "SCIM_DISPLAY_NAME")
     private String scimDisplayName;
 

@@ -30,7 +30,7 @@ public class ScimGroupMapper {
                 .map(m -> {
                     GroupMembership member = new GroupMembership();
                     member.setValue(m.getBrukerId());  // userName (MSF4711)
-                    member.setDisplay(m.getFulltNavn() != null ? m.getFulltNavn() : m.getBrukerId());
+                    member.setDisplay(m.getBrukerId());
                     member.setRef("https://example.com/scim/v2/Users/" + m.getBrukerId());
                     return member;
                 })

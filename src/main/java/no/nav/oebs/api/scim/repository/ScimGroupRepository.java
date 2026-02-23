@@ -26,7 +26,7 @@ public interface ScimGroupRepository extends JpaRepository<ScimGroupEntity, Stri
     @Query(value = """
         SELECT scim_id, scim_display_name, group_id, NULL as responsibility_id,
                group_name, NULL as responsibility_name
-        FROM OMADA_AKTIVE_GRUPPER_V
+        FROM XXRTV.XXRTV_OMADA_AKTIVE_GRUPPER_V
         ORDER BY scim_id
         """, nativeQuery = true)
     Page<ScimGroupEntity> findAllGroups(Pageable pageable);
@@ -37,7 +37,7 @@ public interface ScimGroupRepository extends JpaRepository<ScimGroupEntity, Stri
     @Query(value = """
         SELECT scim_id, scim_display_name, NULL as group_id, responsibility_id,
                NULL as group_name, responsibility_name
-        FROM OMADA_AKTIVE_ANSVARSOMRADER_V
+        FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRADER_V
         ORDER BY scim_id
         """, nativeQuery = true)
     Page<ScimGroupEntity> findAllResponsibilities(Pageable pageable);
@@ -48,11 +48,11 @@ public interface ScimGroupRepository extends JpaRepository<ScimGroupEntity, Stri
     @Query(value = """
         SELECT scim_id, scim_display_name, group_id, NULL as responsibility_id,
                group_name, NULL as responsibility_name
-        FROM OMADA_AKTIVE_GRUPPER_V
+        FROM XXRTV.XXRTV_OMADA_AKTIVE_GRUPPER_V
         UNION ALL
         SELECT scim_id, scim_display_name, NULL as group_id, responsibility_id,
                NULL as group_name, responsibility_name
-        FROM OMADA_AKTIVE_ANSVARSOMRADER_V
+        FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRADER_V
         ORDER BY scim_id
         """, nativeQuery = true)
     Page<ScimGroupEntity> findAllGroupsAndResponsibilities(Pageable pageable);
@@ -62,9 +62,9 @@ public interface ScimGroupRepository extends JpaRepository<ScimGroupEntity, Stri
      */
     @Query(value = """
         SELECT COUNT(*) FROM (
-            SELECT scim_id FROM OMADA_AKTIVE_GRUPPER_V
+            SELECT scim_id FROM XXRTV.XXRTV_OMADA_AKTIVE_GRUPPER_V
             UNION ALL
-            SELECT scim_id FROM OMADA_AKTIVE_ANSVARSOMRADER_V
+            SELECT scim_id FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRADER_V
         )
         """, nativeQuery = true)
     long countAllGroupsAndResponsibilities();

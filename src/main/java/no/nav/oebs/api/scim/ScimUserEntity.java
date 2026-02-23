@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 @Entity
-@Table(name = "OMADA_AKTIVE_BRUKERE_V", schema = "XXRTV")
+@Table(name = "XXRTV_OMADA_AKTIVE_BRUKERE_V", schema = "XXRTV")
 public class ScimUserEntity {
 
     @Id

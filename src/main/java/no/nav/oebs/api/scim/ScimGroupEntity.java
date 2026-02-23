@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Entity
-@Table(name = "", schema = "XXRTV")
+@Table(name = "XXRTV_OMADA_AKTIVE_GRUPPER_V", schema = "XXRTV")
 public class ScimGroupEntity {
 
     @Id

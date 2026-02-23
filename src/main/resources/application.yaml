@@ -2,11 +2,11 @@
 server:
   port: 8080
 
-no.nav.security.jwt:
-   issuer:
-     azure:
-       accepted_audience: ${AZURE_ACCEPTED_AUDIENCE}
-       discovery-url: ${AZURE_DISCOVERY_URL}
+#no.nav.security.jwt:
+#   issuer:
+#     azure:
+#       accepted_audience: ${AZURE_ACCEPTED_AUDIENCE}
+#       discovery-url: ${AZURE_DISCOVERY_URL}
 
 spring:
   profiles:

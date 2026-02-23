@@ -34,7 +34,7 @@ public class ScimUserEntity {
     private String ePost;  // SCIM email (work)
 
     @Column(name = "E_POST_2")
-    private String papEPost;  // Email from per_all_people_f (not used in SCIM yet)
+    private String EPost2;  // Email from per_all_people_f (not used in SCIM yet)
 
     @Column(name = "START_DATO")
     private LocalDate startDato;

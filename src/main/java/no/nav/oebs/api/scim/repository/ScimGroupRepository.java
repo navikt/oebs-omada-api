@@ -37,7 +37,7 @@ public interface ScimGroupRepository extends JpaRepository<ScimGroupEntity, Stri
     @Query(value = """
         SELECT scim_id, scim_display_name, NULL as group_id, responsibility_id,
                NULL as group_name, responsibility_name
-        FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRADER_V
+        FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRAADER_V
         ORDER BY scim_id
         """, nativeQuery = true)
     Page<ScimGroupEntity> findAllResponsibilities(Pageable pageable);
@@ -52,7 +52,7 @@ public interface ScimGroupRepository extends JpaRepository<ScimGroupEntity, Stri
         UNION ALL
         SELECT scim_id, scim_display_name, NULL as group_id, responsibility_id,
                NULL as group_name, responsibility_name
-        FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRADER_V
+        FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRAADER_V
         ORDER BY scim_id
         """, nativeQuery = true)
     Page<ScimGroupEntity> findAllGroupsAndResponsibilities(Pageable pageable);
@@ -64,7 +64,7 @@ public interface ScimGroupRepository extends JpaRepository<ScimGroupEntity, Stri
         SELECT COUNT(*) FROM (
             SELECT scim_id FROM XXRTV.XXRTV_OMADA_AKTIVE_GRUPPER_V
             UNION ALL
-            SELECT scim_id FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRADER_V
+            SELECT scim_id FROM XXRTV.XXRTV_OMADA_AKTIVE_ANSVARSOMRAADER_V
         )
         """, nativeQuery = true)
     long countAllGroupsAndResponsibilities();

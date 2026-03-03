@@ -111,7 +111,7 @@ public class ScimGroupsResource {
     @POST
     public Response createGroup(ScimGroup group) {
         log.warn("CREATE Group - ikke tillatt (read-only)");
-        kallLoggHelper.logg(KallLogg.METHOD_POST, "/scim/v2/Groups",
+        kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Groups",
                 Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, null, null, "Read-only - ikke støttet");
         return Response.status(Response.Status.METHOD_NOT_ALLOWED)
                 .entity("{\"detail\":\"Groups er read-only - POST ikke støttet\"}")
@@ -125,7 +125,7 @@ public class ScimGroupsResource {
     @Path("/{id}")
     public Response updateGroup(@PathParam("id") String id, ScimGroup group) {
         log.warn("UPDATE Group {} - ikke tillatt (read-only)", id);
-        kallLoggHelper.logg(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id,
+        kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id,
                 Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, null, null, "Read-only - ikke støttet");
         return Response.status(Response.Status.METHOD_NOT_ALLOWED)
                 .entity("{\"detail\":\"Groups er read-only - PUT ikke støttet\"}")
@@ -139,7 +139,7 @@ public class ScimGroupsResource {
     @Path("/{id}")
     public Response deleteGroup(@PathParam("id") String id) {
         log.warn("DELETE Group {} - ikke tillatt (read-only)", id);
-        kallLoggHelper.logg(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id,
+        kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id,
                 Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, null, null, "Read-only - ikke støttet");
         return Response.status(Response.Status.METHOD_NOT_ALLOWED)
                 .entity("{\"detail\":\"Groups er read-only - DELETE ikke støttet\"}")

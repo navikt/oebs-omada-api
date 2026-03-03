@@ -141,7 +141,7 @@ public class ScimUsersResource {
 
         log.info("CREATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
 
-        kallLoggHelper.logg(KallLogg.METHOD_POST, "/scim/v2/Users",
+        kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
 
         return Response.status(Response.Status.CREATED)
@@ -174,7 +174,7 @@ public class ScimUsersResource {
 
         log.info("UPDATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
 
-        kallLoggHelper.logg(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
+        kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
 
         return Response.ok(result.getData()).build();
@@ -194,7 +194,7 @@ public class ScimUsersResource {
 
         log.info("DELETE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
 
-        kallLoggHelper.logg(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id,
+        kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id,
                 result.getMessageNumber(), kalltid, id, result.getData(), result.getMessage());
 
         return Response.noContent().build();

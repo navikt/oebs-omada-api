@@ -25,8 +25,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@Table(name = "XXRTV_template_LOGG")
-//TODO: Opprett Tabell for loggføring og SEQ
+@Table(name = "XXRTV_OMADA_LOG")
 public class KallLogg {
 
 	public static final String RETNING_INN = "INN";
@@ -34,10 +33,15 @@ public class KallLogg {
 
 	public static final String TYPE_PLSQL = "PLSQL";
 	public static final String TYPE_REST = "REST";
+
+	public static final String METHOD_GET = "GET";
 	public static final String METHOD_POST = "POST";
+	public static final String METHOD_PUT = "PUT";
+	public static final String METHOD_DELETE = "DELETE";
+
 	@Id
-	@SequenceGenerator(name = "XXRTV_template_SEQ", sequenceName = "XXRTV_template_SEQ", allocationSize = 1)
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "XXRTV_template_SEQ")
+	@SequenceGenerator(name = "XXRTV_OMADA_SEQ", sequenceName = "XXRTV_OMADA_SEQ", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "XXRTV_OMADA_SEQ")
 	@Column(name = "KALL_LOGG_ID")
 	private Long id;
 
@@ -62,7 +66,6 @@ public class KallLogg {
 	@Column(name = "STATUS")
 	private Integer status;
 
-	// Brukes for beregning av kalltid.
 	@Transient
 	private long startTid;
 

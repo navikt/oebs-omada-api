@@ -2,11 +2,14 @@ package no.nav.oebs.api.scim.mapper;
 
 import no.nav.oebs.api.scim.ScimGroupMembershipEntity;
 import no.nav.oebs.api.scim.ScimUserEntity;
+import no.nav.oebs.api.scim.extension.NavOebsExtension;
 import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import org.apache.directory.scim.spec.resources.*;
 import org.apache.directory.scim.spec.schema.Meta;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -69,15 +72,20 @@ public class ScimUserMapper {
             user.addExtension(enterprise);
         }
 
-        // TODO: custom extension
-        // NavExtension navExt = new NavExtension();
-        // navExt.setFullmakt(...);
-        // user.addExtension(navExt);
+        // NAV OeBS custom extension
+        NavOebsExtension navExt = new NavOebsExtension();
+        navExt.setFullmakt(null); // TODO: hent fullmakt fra kilde når tilgjengelig
+        user.addExtension(navExt);
 
         // Meta
         Meta meta = new Meta();
         meta.setResourceType("User");
-        // TODO: Set created, lastModified from entity
+        if (entity.getCreationDate() != null) {
+            meta.setCreated(ZonedDateTime.of(entity.getCreationDate(), ZoneId.systemDefault()));
+        }
+        if (entity.getLastUpdateDate() != null) {
+            meta.setLastModified(ZonedDateTime.of(entity.getLastUpdateDate(), ZoneId.systemDefault()));
+        }
         user.setMeta(meta);
 
         return user;

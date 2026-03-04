@@ -40,7 +40,7 @@ public class KallLogg {
 	public static final String METHOD_DELETE = "DELETE";
 
 	@Id
-	@SequenceGenerator(name = "XXRTV_OMADA_SEQ", sequenceName = "APPS.XXRTV_OMADA_SEQ", allocationSize = 1)
+	@SequenceGenerator(name = "XXRTV_OMADA_SEQ", sequenceName = "XXRTV_OMADA_SEQ", allocationSize = 1)
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "XXRTV_OMADA_SEQ")
 	@Column(name = "KALL_LOGG_ID")
 	private Long id;

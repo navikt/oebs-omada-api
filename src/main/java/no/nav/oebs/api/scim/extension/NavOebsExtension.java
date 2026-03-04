@@ -1,10 +1,10 @@
 package no.nav.oebs.api.scim.extension;
 
 import lombok.Data;
-import org.apache.directory.scim.spec.annotation.Attribute;
-import org.apache.directory.scim.spec.annotation.Schema;
+import org.apache.directory.scim.spec.annotation.ScimAttribute;
+import org.apache.directory.scim.spec.annotation.ScimExtensionType;
 import org.apache.directory.scim.spec.resources.ScimExtension;
-import org.apache.directory.scim.spec.schema.AttributeDefinition;
+import org.apache.directory.scim.spec.schema.Schema;
 
 import java.io.Serial;
 
@@ -13,10 +13,11 @@ import java.io.Serial;
  * URN: urn:ietf:params:scim:schemas:extension:nav:oebs:2.0:User
  */
 @Data
-@Schema(
+@ScimExtensionType(
     id = NavOebsExtension.URN,
     name = "NavOebsExtension",
-    description = "NAV OeBS-spesifikke brukerattributter"
+    description = "NAV OeBS-spesifikke brukerattributter",
+    required = false
 )
 public class NavOebsExtension implements ScimExtension {
 
@@ -25,9 +26,9 @@ public class NavOebsExtension implements ScimExtension {
 
     public static final String URN = "urn:ietf:params:scim:schemas:extension:nav:oebs:2.0:User";
 
-    @Attribute(
+    @ScimAttribute(
         description = "Fullmakt tildelt brukeren i OeBS",
-        mutability = AttributeDefinition.Mutability.READ_ONLY
+        mutability = Schema.Attribute.Mutability.readOnly
     )
     private String fullmakt;
 
@@ -36,4 +37,3 @@ public class NavOebsExtension implements ScimExtension {
         return URN;
     }
 }
-

@@ -3,6 +3,7 @@ package no.nav.oebs.api.scim;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -44,6 +45,18 @@ public class ScimUserEntity {
 
     @Column(name = "ACTIVE_FLAG")
     private String activeFlag;  // Y/N
+
+    @Column(name = "LAST_UPDATE_DATE")
+    private LocalDateTime lastUpdateDate;
+
+    @Column(name = "CREATION_DATE")
+    private LocalDateTime creationDate;
+
+    @Column(name = "EFFECTIVE_START_DATE")
+    private LocalDate effectiveStartDate;
+
+    @Column(name = "EFFECTIVE_END_DATE")
+    private LocalDate effectiveEndDate;
 
     // Enterprise extension data - now part of V_OMADA_ACTIVE_USERS
     @Column(name = "ENHETS_ID")

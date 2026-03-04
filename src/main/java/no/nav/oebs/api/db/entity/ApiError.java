@@ -1,12 +1,13 @@
 package no.nav.oebs.api.db.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.http.HttpStatus;
 
-import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.http.HttpStatus;
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 
 @Getter
 @Setter
@@ -17,5 +18,5 @@ public class ApiError {
     private LocalDateTime timestamp;
     private HttpStatus status;
     private String message;
-    private List errors;
+    private List<String> errors;
 }

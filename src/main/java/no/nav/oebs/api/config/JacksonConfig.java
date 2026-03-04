@@ -14,7 +14,7 @@ public class JacksonConfig {
 
 	@Bean
 	public Jackson2ObjectMapperBuilderCustomizer jacksonCustomizer() {
-		return builder.featuresToDisable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+		return builder -> builder.featuresToDisable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
 				.timeZone(TimeZone.getDefault())
 				.serializationInclusion(JsonInclude.Include.NON_NULL);
 	}

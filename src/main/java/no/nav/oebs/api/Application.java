@@ -1,6 +1,5 @@
 package no.nav.oebs.api;
 
-// import no.nav.oebs.api.config.Props;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;

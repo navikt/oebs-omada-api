@@ -37,11 +37,11 @@ public class PlsqlProcedureResult {
 		}
 	}
 
-	public static Integer getMessageNumber(PlsqlProcedureResult result) {
+	public static Integer resolveMessageNumber(PlsqlProcedureResult result) {
 		return result != null ? result.getMessageNumber() : Integer.valueOf(PlsqlMessageCodes.OK);
 	}
 
-	public static String getMessage(PlsqlProcedureResult result) {
+	public static String resolveMessage(PlsqlProcedureResult result) {
 		return result != null ? result.getMessage() : null;
 	}
 }

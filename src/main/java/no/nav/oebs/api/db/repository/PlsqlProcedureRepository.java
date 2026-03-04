@@ -142,13 +142,13 @@ public class PlsqlProcedureRepository {
 					.operation(procedureName) //
 					.status(exception != null //
 							? Integer.valueOf(PlsqlMessageCodes.EXCEPTION) //
-							: PlsqlProcedureResult.getMessageNumber(result)) //
+							: PlsqlProcedureResult.resolveMessageNumber(result)) //
 					.kalltid(executionTime) //
 					.request(dataIn) //
 					.response(result != null ? result.getData() : null) //
 					.logginfo(exception != null //
 							? LoggingUtils.formatExceptionAsString(exception) //
-							: PlsqlProcedureResult.getMessage(result)) //
+							: PlsqlProcedureResult.resolveMessage(result)) //
 					.build();
 
 			log.debug("Correlation ID:  '" + correlationId + "'");

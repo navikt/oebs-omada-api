@@ -37,8 +37,13 @@ public class KallLoggHelper {
 
     private void save(String retning, String method, String operation, int status,
                       long kalltid, String request, String response, String logginfo) {
+        String korrelasjonId = MdcOperations.get(MdcOperations.MDC_CORRELATION_ID);
+
+        log.info("[{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={}",
+                retning, method, operation, status, kalltid, korrelasjonId, request);
+
         KallLogg kallLogg = KallLogg.builder()
-                .korrelasjonId(MdcOperations.get(MdcOperations.MDC_CORRELATION_ID))
+                .korrelasjonId(korrelasjonId)
                 .tidspunkt(LocalDateTime.now())
                 .type(KallLogg.TYPE_REST)
                 .kallRetning(retning)

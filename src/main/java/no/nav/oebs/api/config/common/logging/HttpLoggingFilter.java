@@ -43,6 +43,13 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 
 		long startTime = System.currentTimeMillis();
 
+		// Sett korrelasjons-ID — bruk innkommende header hvis tilgjengelig, ellers generer ny
+		String korrelasjonId = request.getHeader("X-Correlation-ID");
+		if (korrelasjonId == null || korrelasjonId.isBlank()) {
+			korrelasjonId = MdcOperations.generateCorrelationId();
+		}
+		MdcOperations.put(MdcOperations.MDC_CORRELATION_ID, korrelasjonId);
+
 		HttpServletRequest requestToUse = request;
 		if (!(request instanceof ContentCachingRequestWrapper)) {
 			requestToUse = new ContentCachingRequestWrapper(request, CACHE_SIZE);
@@ -76,6 +83,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 					.build();
 
 			saveKallLogg(kallLogg);
+			MdcOperations.remove(MdcOperations.MDC_CORRELATION_ID);
 		}
 	}
 

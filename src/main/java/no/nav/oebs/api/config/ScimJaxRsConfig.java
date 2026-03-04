@@ -2,6 +2,7 @@ package no.nav.oebs.api.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import no.nav.oebs.api.config.common.mdc.CorrelationIdFilter;
 import no.nav.oebs.api.scim.rest.ScimGroupsResource;
 import no.nav.oebs.api.scim.rest.ScimUsersResource;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -49,6 +50,9 @@ public class ScimJaxRsConfig {
         // Register SCIM resources
         config.register(usersResource);
         config.register(groupsResource);
+
+        // Register MDC korrelasjons-ID filter
+        config.register(CorrelationIdFilter.class);
 
         // Register JSON provider
         config.register(org.glassfish.jersey.jackson.JacksonFeature.class);

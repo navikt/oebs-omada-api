@@ -8,8 +8,6 @@ import org.apache.directory.scim.spec.resources.*;
 import org.apache.directory.scim.spec.schema.Meta;
 import org.springframework.stereotype.Component;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,10 +79,10 @@ public class ScimUserMapper {
         Meta meta = new Meta();
         meta.setResourceType("User");
         if (entity.getCreationDate() != null) {
-            meta.setCreated(ZonedDateTime.of(entity.getCreationDate(), ZoneId.systemDefault()));
+            meta.setCreated(entity.getCreationDate());
         }
         if (entity.getLastUpdateDate() != null) {
-            meta.setLastModified(ZonedDateTime.of(entity.getLastUpdateDate(), ZoneId.systemDefault()));
+            meta.setLastModified(entity.getLastUpdateDate());
         }
         user.setMeta(meta);
 

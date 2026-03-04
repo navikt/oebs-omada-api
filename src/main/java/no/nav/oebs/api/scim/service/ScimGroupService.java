@@ -63,7 +63,7 @@ public class ScimGroupService {
         int pageNumber = (startIndex - 1) / count;
         Pageable pageable = PageRequest.of(pageNumber, count);
 
-        Page<ScimGroupEntity> groupPage = groupRepository.findAllGroupsAndResponsibilities(pageable);
+        Page<ScimGroupEntity> groupPage = groupRepository.findAllByOrderByScimIdAsc(pageable);
 
         // Konverter til SCIM Groups (uten medlemmer for ytelse)
         Page<ScimGroup> scimGroupPage = groupPage.map(entity ->

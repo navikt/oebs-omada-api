@@ -41,11 +41,11 @@ public class ScimGroupMapper {
         // Meta
         Meta meta = new Meta();
         meta.setResourceType("Group");
-        if (entity.getCreationDate() != null) {
-            meta.setCreated(entity.getCreationDate());
+        if (entity.getOpprettetDato() != null) {
+            meta.setCreated(entity.getOpprettetDato());
         }
-        if (entity.getLastUpdateDate() != null) {
-            meta.setLastModified(entity.getLastUpdateDate());
+        if (entity.getSistOppdatert() != null) {
+            meta.setLastModified(entity.getSistOppdatert());
         }
         group.setMeta(meta);
 

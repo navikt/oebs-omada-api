@@ -39,8 +39,8 @@ public class KallLoggHelper {
                       long kalltid, String request, String response, String logginfo) {
         String korrelasjonId = MdcOperations.get(MdcOperations.MDC_CORRELATION_ID);
 
-        log.info("[{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={}",
-                retning, method, operation, status, kalltid, korrelasjonId, request);
+        log.info("[{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={} response={}",
+                retning, method, operation, status, kalltid, korrelasjonId, request, truncate(response));
 
         KallLogg kallLogg = KallLogg.builder()
                 .korrelasjonId(korrelasjonId)
@@ -61,5 +61,10 @@ public class KallLoggHelper {
         } catch (Exception e) {
             log.error("Feil ved logging av kalloggdata til databasen; feilmelding=" + e.getMessage(), e);
         }
+    }
+
+    private String truncate(String value) {
+        if (value == null) return null;
+        return value.length() > 500 ? value.substring(0, 500) + "...[trunkert]" : value;
     }
 }

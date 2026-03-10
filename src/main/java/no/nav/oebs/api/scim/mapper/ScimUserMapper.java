@@ -26,7 +26,7 @@ public class ScimUserMapper {
 
         // Core attributes
         user.setId(entity.getBrukerId());
-        user.setExternalId(String.valueOf(entity.getNavId()));
+        user.setExternalId(entity.getNavId());
         user.setUserName(entity.getBrukerId());
         user.setActive(entity.isActive());
 

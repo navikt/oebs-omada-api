@@ -23,7 +23,7 @@ public class ScimUserEntity {
     private String brukerId;  // SCIM userName
 
     @Column(name = "NAV_ID")
-    private Long navId;  // SCIM externalId
+    private String navId;  // SCIM externalId - del av e-post før @, f.eks. K105317
 
     @Column(name = "FOR_NAVN")
     private String forNavn;  // SCIM givenName

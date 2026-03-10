@@ -56,7 +56,7 @@ public class ScimUserService {
     /**
      * Hent bruker basert på externalId (navId)
      */
-    public Optional<ScimUser> getUserByExternalId(Long navId) {
+    public Optional<ScimUser> getUserByExternalId(String navId) {
         log.debug("Henter bruker med navId: {}", navId);
 
         Optional<ScimUserEntity> userEntity = userRepository.findByNavId(navId);

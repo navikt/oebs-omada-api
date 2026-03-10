@@ -24,7 +24,7 @@ public interface ScimUserRepository extends JpaRepository<ScimUserEntity, Long> 
     /**
      * Finn bruker basert på navId (externalId i SCIM)
      */
-    Optional<ScimUserEntity> findByNavId(Long navId);
+    Optional<ScimUserEntity> findByNavId(String navId);
 
     /**
      * Hent alle aktive brukere (paginert)

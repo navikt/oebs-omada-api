@@ -39,10 +39,13 @@ public class ScimUserMapper {
 
         user.setDisplayName(entity.getFullName());
 
-        // Email
-        if (entity.getEPost() != null) {
+        // Email - bruk NAV e-post (COUNTRY_OF_BIRTH) som primær om satt, ellers fallback til FND_USER e-post
+        String epostVerdi = entity.getNavEPost() != null && !entity.getNavEPost().isBlank()
+                ? entity.getNavEPost()
+                : entity.getEPost();
+        if (epostVerdi != null) {
             Email email = new Email();
-            email.setValue(entity.getEPost());
+            email.setValue(epostVerdi);
             email.setType("work");
             email.setPrimary(true);
             user.setEmails(Collections.singletonList(email));

@@ -32,10 +32,13 @@ public class ScimUserEntity {
     private String etterNavn;  // SCIM familyName
 
     @Column(name = "E_POST")
-    private String ePost;  // SCIM email (work)
+    private String ePost;  // SCIM email (work) - FND_USER.EMAIL_ADDRESS, fallback
 
     @Column(name = "E_POST_2")
     private String EPost2;  // Email from per_all_people_f (not used in SCIM yet)
+
+    @Column(name = "NAV_E_POST")
+    private String navEPost;  // SCIM email (work) - NAV e-post fra PER_ALL_PEOPLE_F.COUNTRY_OF_BIRTH - primær e-post i SCIM om satt
 
     @Column(name = "START_DATO")
     private LocalDate startDato;

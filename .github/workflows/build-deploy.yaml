@@ -9,6 +9,7 @@ jobs:
     permissions:
       contents: "read"
       id-token: "write"
+      packages: "read"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,9 +20,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: maven
 
       - name: Build with Maven
-        run: mvn clean install -DskipTests
+        run: mvn clean install -DskipTests --settings .github/maven-settings.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: nais/docker-build-push@v0
         id: docker-push

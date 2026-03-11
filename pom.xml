@@ -22,7 +22,7 @@
         <surefire.coverage.argLine/>
 
         <!-- NAV artifacts -->
-        <token-validation.version>5.0.5</token-validation.version>
+        <token-validation.version>6.0.3</token-validation.version>
         <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
         <nimbus-jose-jwt.version>9.25.6</nimbus-jose-jwt.version>
         <springdoc-openapi.version>1.8.0</springdoc-openapi.version>
@@ -117,6 +117,12 @@
             <version>${token-validation.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>no.nav.security</groupId>
+            <artifactId>token-validation-jaxrs</artifactId>
+            <version>${token-validation.version}</version>
+        </dependency>
+
 
         <!-- Kreves av NAV token-validation -->
         <dependency>
@@ -202,6 +208,13 @@
         </dependency>
 
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/navikt/token-support</url>
+        </repository>
+    </repositories>
 
     <build>
         <pluginManagement>

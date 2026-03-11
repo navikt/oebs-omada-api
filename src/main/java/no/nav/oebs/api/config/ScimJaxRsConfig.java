@@ -1,22 +1,21 @@
 package no.nav.oebs.api.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.config.common.mdc.CorrelationIdFilter;
 import no.nav.oebs.api.scim.rest.ScimGroupsResource;
 import no.nav.oebs.api.scim.rest.ScimUsersResource;
+import no.nav.security.token.support.jaxrs.JwtTokenContainerRequestFilter;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import jakarta.annotation.PostConstruct;
-
 /**
  * SCIM 2.0 JAX-RS configuration
  * Registrerer våre SCIM REST resources med Jersey
- *
  * Endepunkter:
  * - GET /scim/v2/Users
  * - GET /scim/v2/Users/{id}
@@ -51,6 +50,9 @@ public class ScimJaxRsConfig {
         config.register(usersResource);
         config.register(groupsResource);
 
+        // Register JAX-RS JWT token validation filter (håndhever @Protected / @Unprotected)
+        config.register(JwtTokenContainerRequestFilter.class);
+
         // Register MDC korrelasjons-ID filter
         config.register(CorrelationIdFilter.class);
 
@@ -75,6 +77,3 @@ public class ScimJaxRsConfig {
         return registration;
     }
 }
-
-
-

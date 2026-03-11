@@ -11,9 +11,9 @@ import org.springframework.context.annotation.Configuration;
 //TODO: Oppdatere til å passe OMADA integrasjonen
 @Configuration
 public class SwaggerConfig {
-	public static final String template = "OeBS API";
+	public static final String OMADA = "OeBS API";
 
-	@Value("${OEBS_ENV}")
+    @Value("${OEBS_ENV}")
 	String env;
 
 	@Value("${APP_UPDATE}")

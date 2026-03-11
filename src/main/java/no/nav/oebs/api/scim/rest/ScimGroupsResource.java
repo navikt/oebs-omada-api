@@ -4,16 +4,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import no.nav.oebs.api.common.swagger.OmadaSwagger;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.scim.service.ScimGroupService;
+import no.nav.security.token.support.core.api.Protected;
+import no.nav.security.token.support.core.api.Unprotected;
 import org.apache.directory.scim.spec.resources.ScimGroup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.Optional;
 
@@ -27,6 +31,7 @@ import java.util.Optional;
 @Path("/Groups")
 @Produces("application/scim+json")
 @Consumes("application/scim+json")
+@Validated
 public class ScimGroupsResource {
 
     @Autowired
@@ -49,6 +54,8 @@ public class ScimGroupsResource {
      */
     @GET
     @Path("/{id}")
+    @Protected
+    @OmadaSwagger
     public Response getGroup(@PathParam("id") String id) {
         log.debug("GET Group: id={}", id);
         long startTid = System.currentTimeMillis();
@@ -76,6 +83,8 @@ public class ScimGroupsResource {
      * GET /scim/v2/Groups?startIndex={n}&count={m}
      */
     @GET
+    @Protected
+    @OmadaSwagger
     public Response listGroups(
             @QueryParam("startIndex") @DefaultValue("1") int startIndex,
             @QueryParam("count") @DefaultValue("100") int count,
@@ -109,6 +118,8 @@ public class ScimGroupsResource {
      * POST /scim/v2/Groups - ikke støttet, grupper er read-only
      */
     @POST
+    @Unprotected
+    @OmadaSwagger
     public Response createGroup(ScimGroup group) {
         log.warn("CREATE Group - ikke tillatt (read-only)");
         kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Groups",
@@ -123,6 +134,8 @@ public class ScimGroupsResource {
      */
     @PUT
     @Path("/{id}")
+    @Unprotected
+    @OmadaSwagger
     public Response updateGroup(@PathParam("id") String id, ScimGroup group) {
         log.warn("UPDATE Group {} - ikke tillatt (read-only)", id);
         kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id,
@@ -137,6 +150,8 @@ public class ScimGroupsResource {
      */
     @DELETE
     @Path("/{id}")
+    @Unprotected
+    @OmadaSwagger
     public Response deleteGroup(@PathParam("id") String id) {
         log.warn("DELETE Group {} - ikke tillatt (read-only)", id);
         kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id,

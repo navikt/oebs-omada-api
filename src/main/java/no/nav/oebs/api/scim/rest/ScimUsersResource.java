@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import no.nav.security.token.support.core.api.Unprotected;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.db.entity.KallLogg;
@@ -16,7 +17,9 @@ import org.apache.directory.scim.spec.resources.ScimUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
+import no.nav.oebs.api.common.swagger.OmadaSwagger;
 import java.util.Optional;
 
 /**
@@ -25,10 +28,12 @@ import java.util.Optional;
  * GET /scim/v2/Users/{id}
  */
 @Slf4j
+@Unprotected
 @Component
 @Path("/Users")
 @Produces("application/scim+json")
 @Consumes("application/scim+json")
+@Validated
 public class ScimUsersResource {
 
     private static final String PLSQL_PROCEDURE_NAME = "XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage";
@@ -57,6 +62,7 @@ public class ScimUsersResource {
      */
     @GET
     @Path("/{id}")
+    @OmadaSwagger
     public Response getUser(@PathParam("id") String id) {
         log.debug("GET User: id={}", id);
         long startTid = System.currentTimeMillis();
@@ -85,6 +91,7 @@ public class ScimUsersResource {
      * List alle brukere (paginert)
      */
     @GET
+    @OmadaSwagger
     public Response listUsers(
             @QueryParam("startIndex") @DefaultValue("1") int startIndex,
             @QueryParam("count") @DefaultValue("100") int count,
@@ -119,6 +126,7 @@ public class ScimUsersResource {
      * POST /scim/v2/Users
      */
     @POST
+    @OmadaSwagger
     public Response createUser(ScimUser user) {
         log.info("CREATE User: userName={}", user != null ? user.getUserName() : null);
 
@@ -155,6 +163,7 @@ public class ScimUsersResource {
      */
     @PUT
     @Path("/{id}")
+    @OmadaSwagger
     public Response updateUser(@PathParam("id") String id, ScimUser user) {
         log.info("UPDATE User: id={}", id);
 
@@ -185,6 +194,7 @@ public class ScimUsersResource {
      */
     @DELETE
     @Path("/{id}")
+    @OmadaSwagger
     public Response deleteUser(@PathParam("id") String id) {
         log.info("DELETE User: id={}", id);
 

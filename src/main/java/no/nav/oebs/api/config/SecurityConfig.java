@@ -1,15 +1,26 @@
 package no.nav.oebs.api.config;
 
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
+import no.nav.security.token.support.filter.JwtTokenValidationFilter;
 import no.nav.security.token.support.jaxrs.servlet.JaxrsJwtTokenValidationFilter;
 import no.nav.security.token.support.spring.api.EnableJwtTokenValidation;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
 @EnableJwtTokenValidation(ignore = { "org.springframework", "org.springdoc" })
 public class SecurityConfig {
+
+    @Bean
+    @Primary
+    public FilterRegistrationBean<JwtTokenValidationFilter> oidcTokenValidationFilterRegistrationBean(
+            JwtTokenValidationFilter tokenValidationFilter) {
+        var registration = new FilterRegistrationBean<>(tokenValidationFilter);
+        registration.setEnabled(false);
+        return registration;
+    }
 
     @Bean
     public FilterRegistrationBean<JaxrsJwtTokenValidationFilter> jaxrsJwtTokenValidationFilterBean(

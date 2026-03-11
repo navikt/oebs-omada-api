@@ -115,6 +115,14 @@
             <groupId>no.nav.security</groupId>
             <artifactId>token-validation-spring</artifactId>
             <version>${token-validation.version}</version>
+            <exclusions>
+                <!-- token-validation-spring 6.0.3 drar inn Spring Boot 4.x via restclient,
+                     som kolliderer med prosjektets Spring Boot 3.4.x -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-restclient</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

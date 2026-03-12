@@ -6,20 +6,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
-import no.nav.security.token.support.core.api.Unprotected;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import no.nav.oebs.api.common.swagger.OmadaSwagger;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.db.repository.PlsqlProcedureRepository;
 import no.nav.oebs.api.db.repository.PlsqlProcedureResult;
 import no.nav.oebs.api.scim.service.ScimUserService;
 import org.apache.directory.scim.spec.resources.ScimUser;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
-import org.springframework.validation.annotation.Validated;
 
-import no.nav.oebs.api.common.swagger.OmadaSwagger;
 import java.util.Optional;
 
 /**
@@ -28,49 +25,47 @@ import java.util.Optional;
  * GET /scim/v2/Users/{id}
  */
 @Slf4j
-@Unprotected
 @Component
 @Path("/Users")
-@Produces("application/scim+json")
-@Consumes("application/scim+json")
-@Validated
+@Produces({"application/scim+json", "application/json"})
+@Consumes({"application/scim+json", "application/json"})
 public class ScimUsersResource {
 
     private static final String PLSQL_PROCEDURE_NAME = "XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage";
-
-    @Autowired
-    private PlsqlProcedureRepository plsqlRepository;
-
-    @Autowired
-    private KallLoggHelper kallLoggHelper;
 
     private static final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
             .enable(JsonReadFeature.ALLOW_LEADING_ZEROS_FOR_NUMBERS.mappedFeature())
             .build();
 
+    private final PlsqlProcedureRepository plsqlRepository;
+    private final KallLoggHelper kallLoggHelper;
     private final ScimUserService userService;
 
     @Inject
-    public ScimUsersResource(ScimUserService userService) {
+    public ScimUsersResource(PlsqlProcedureRepository plsqlRepository,
+                             KallLoggHelper kallLoggHelper,
+                             ScimUserService userService) {
+        this.plsqlRepository = plsqlRepository;
+        this.kallLoggHelper = kallLoggHelper;
         this.userService = userService;
     }
 
     /**
      * GET /scim/v2/Users/{id}
-     * Hent en enkelt bruker
      */
     @GET
     @Path("/{id}")
     @OmadaSwagger
     public Response getUser(@PathParam("id") String id) {
-        log.debug("GET User: id={}", id);
+        log.info("GET User: id={}", id);
         long startTid = System.currentTimeMillis();
 
         Optional<ScimUser> user = userService.getUser(id);
 
         if (user.isEmpty()) {
             long kalltid = System.currentTimeMillis() - startTid;
+            log.info("GET User: id={} - IKKE FUNNET, kalltid={}ms", id, kalltid);
             kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users/" + id,
                     Response.Status.NOT_FOUND.getStatusCode(), kalltid, null, "User not found");
             return Response.status(Response.Status.NOT_FOUND)
@@ -80,6 +75,7 @@ public class ScimUsersResource {
 
         long kalltid = System.currentTimeMillis() - startTid;
         String responseJson = toJson(user.get());
+        log.info("GET User: id={} - FUNNET, kalltid={}ms", id, kalltid);
         kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users/" + id,
                 Response.Status.OK.getStatusCode(), kalltid, responseJson, null);
 
@@ -88,7 +84,6 @@ public class ScimUsersResource {
 
     /**
      * GET /scim/v2/Users?startIndex={n}&count={m}
-     * List alle brukere (paginert)
      */
     @GET
     @OmadaSwagger
@@ -97,7 +92,7 @@ public class ScimUsersResource {
             @QueryParam("count") @DefaultValue("100") int count,
             @QueryParam("filter") String filter) {
 
-        log.debug("LIST Users: startIndex={}, count={}, filter={}", startIndex, count, filter);
+        log.info("LIST Users: startIndex={}, count={}, filter={}", startIndex, count, filter);
         long startTid = System.currentTimeMillis();
 
         if (filter != null) {
@@ -106,7 +101,6 @@ public class ScimUsersResource {
 
         Page<ScimUser> userPage = userService.getUsers(startIndex, count);
 
-        // Build SCIM ListResponse manually
         ScimListResponse<ScimUser> response = new ScimListResponse<>();
         response.setSchemas(java.util.List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
         response.setTotalResults((int) userPage.getTotalElements());
@@ -115,6 +109,8 @@ public class ScimUsersResource {
         response.setResources(userPage.getContent());
 
         long kalltid = System.currentTimeMillis() - startTid;
+        log.info("LIST Users fullført: totalResults={}, returnert={}, kalltid={}ms",
+                response.getTotalResults(), response.getItemsPerPage(), kalltid);
         kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users",
                 Response.Status.OK.getStatusCode(), kalltid, toJson(response),
                 "totalResults=" + response.getTotalResults());
@@ -127,45 +123,41 @@ public class ScimUsersResource {
      */
     @POST
     @OmadaSwagger
-    public Response createUser(ScimUser user) {
-        log.info("CREATE User: userName={}", user != null ? user.getUserName() : null);
+    public Response createUser(String body) {
+        log.info("CREATE User - innkommende request body: {}", body);
 
-        String userJson;
+        Response validationError = validateBody(body, KallLogg.METHOD_POST, "/scim/v2/Users");
+        if (validationError != null) return validationError;
+
+        ScimUser user;
         try {
-            userJson = objectMapper.writeValueAsString(user);
+            user = objectMapper.readValue(body, ScimUser.class);
         } catch (JsonProcessingException e) {
-            log.error("Feil ved serialisering av bruker til JSON", e);
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"detail\":\"Ugyldig bruker-data: " + e.getMessage() + "\"}")
-                    .build();
+            log.error("Feil ved deserialisering av SCIM JSON til ScimUser", e);
+            String errorJson = "{\"detail\":\"Ugyldig SCIM bruker-data: " + e.getMessage() + "\"}";
+            kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
+                    Response.Status.BAD_REQUEST.getStatusCode(), 0, body, errorJson, e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorJson).build();
         }
 
-        long startTid = System.currentTimeMillis();
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(
-                PLSQL_PROCEDURE_NAME,
-                userJson
-        );
-        long kalltid = System.currentTimeMillis() - startTid;
+        if (user == null) {
+            log.warn("CREATE User avvist: deserialisert bruker er null");
+            String errorJson = "{\"detail\":\"Bruker-data er null\"}";
+            kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
+                    Response.Status.BAD_REQUEST.getStatusCode(), 0, body, errorJson, "Bruker er null");
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorJson).build();
+        }
 
-        log.info("CREATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
+        if (user.getUserName() == null || user.getUserName().isBlank()) {
+            log.warn("CREATE User avvist: userName er null eller tom");
+            String errorJson = "{\"detail\":\"userName er påkrevd\"}";
+            kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
+                    Response.Status.BAD_REQUEST.getStatusCode(), 0, body, errorJson, "userName mangler");
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorJson).build();
+        }
 
-        kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
-                result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
-
-        return Response.status(Response.Status.CREATED)
-                .entity(result.getData())
-                .build();
-    }
-
-
-    /**
-     * PUT /scim/v2/Users/{id}
-     */
-    @PUT
-    @Path("/{id}")
-    @OmadaSwagger
-    public Response updateUser(@PathParam("id") String id, ScimUser user) {
-        log.info("UPDATE User: id={}", id);
+        log.info("CREATE User: userName={}, externalId={}, active={}",
+                user.getUserName(), user.getExternalId(), user.getActive());
 
         String userJson;
         try {
@@ -181,7 +173,75 @@ public class ScimUsersResource {
         PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
-        log.info("UPDATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
+        log.info("CREATE User fullført: messageNumber={}, message={}, kalltid={}ms",
+                result.getMessageNumber(), result.getMessage(), kalltid);
+        log.info("CREATE User svar: {}", result.getData());
+
+        kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
+                result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
+
+        return Response.status(Response.Status.CREATED).entity(result.getData()).build();
+    }
+
+    /**
+     * PUT /scim/v2/Users/{id}
+     */
+    @PUT
+    @Path("/{id}")
+    @OmadaSwagger
+    public Response updateUser(@PathParam("id") String id, String body) {
+        log.info("UPDATE User: id={} - innkommende request body: {}", id, body);
+
+        Response validationError = validateBody(body, KallLogg.METHOD_PUT, "/scim/v2/Users/" + id);
+        if (validationError != null) return validationError;
+
+        ScimUser user;
+        try {
+            user = objectMapper.readValue(body, ScimUser.class);
+        } catch (JsonProcessingException e) {
+            log.error("Feil ved deserialisering av SCIM JSON til ScimUser", e);
+            String errorJson = "{\"detail\":\"Ugyldig SCIM bruker-data: " + e.getMessage() + "\"}";
+            kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
+                    Response.Status.BAD_REQUEST.getStatusCode(), 0, body, errorJson, e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorJson).build();
+        }
+
+        if (user == null) {
+            log.warn("UPDATE User avvist: deserialisert bruker er null, id={}", id);
+            String errorJson = "{\"detail\":\"Bruker-data er null\"}";
+            kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
+                    Response.Status.BAD_REQUEST.getStatusCode(), 0, body, errorJson, "Bruker er null");
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorJson).build();
+        }
+
+        if (user.getUserName() == null || user.getUserName().isBlank()) {
+            log.warn("UPDATE User avvist: userName er null eller tom, id={}", id);
+            String errorJson = "{\"detail\":\"userName er påkrevd\"}";
+            kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
+                    Response.Status.BAD_REQUEST.getStatusCode(), 0, body, errorJson, "userName mangler");
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorJson).build();
+        }
+
+        log.info("UPDATE User: id={}, userName={}, externalId={}, active={}",
+                id, user.getUserName(), user.getExternalId(), user.getActive());
+
+        String userJson;
+        try {
+            userJson = objectMapper.writeValueAsString(user);
+        } catch (JsonProcessingException e) {
+            log.error("Feil ved serialisering av bruker til JSON", e);
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"detail\":\"Ugyldig bruker-data: " + e.getMessage() + "\"}")
+                    .build();
+        }
+
+        long startTid = System.currentTimeMillis();
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, userJson);
+        long kalltid = System.currentTimeMillis() - startTid;
+
+        log.info("UPDATE User fullført: id={}, messageNumber={}, message={}, kalltid={}ms",
+                id, result.getMessageNumber(), result.getMessage(), kalltid);
+        log.info("UPDATE User svar: {}", result.getData());
 
         kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
@@ -198,16 +258,40 @@ public class ScimUsersResource {
     public Response deleteUser(@PathParam("id") String id) {
         log.info("DELETE User: id={}", id);
 
+        if (id == null || id.isBlank()) {
+            log.warn("DELETE User avvist: id er null eller tom");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"detail\":\"id er påkrevd\"}")
+                    .build();
+        }
+
         long startTid = System.currentTimeMillis();
         PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, id);
         long kalltid = System.currentTimeMillis() - startTid;
 
-        log.info("DELETE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
+        log.info("DELETE User fullført: id={}, messageNumber={}, message={}, kalltid={}ms",
+                id, result.getMessageNumber(), result.getMessage(), kalltid);
+        log.info("DELETE User svar: {}", result.getData());
 
         kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id,
                 result.getMessageNumber(), kalltid, id, result.getData(), result.getMessage());
 
         return Response.noContent().build();
+    }
+
+    /**
+     * Felles validering av request body for POST og PUT.
+     * Returnerer en BAD_REQUEST-respons om body er ugyldig, ellers null.
+     */
+    private Response validateBody(String body, String method, String operation) {
+        if (body == null || body.isBlank()) {
+            log.warn("{} avvist: request body er null eller tom", operation);
+            String errorJson = "{\"detail\":\"Request body kan ikke være tom\"}";
+            kallLoggHelper.loggUt(method, operation,
+                    Response.Status.BAD_REQUEST.getStatusCode(), 0, null, errorJson, "Body er null/tom");
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorJson).build();
+        }
+        return null;
     }
 
     private String toJson(Object obj) {

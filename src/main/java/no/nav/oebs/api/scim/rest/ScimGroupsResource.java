@@ -29,8 +29,8 @@ import java.util.Optional;
 @Unprotected
 @Component
 @Path("/Groups")
-@Produces("application/scim+json")
-@Consumes("application/scim+json")
+@Produces({"application/scim+json", "application/json"})
+@Consumes({"application/scim+json", "application/json"})
 @Validated
 public class ScimGroupsResource {
 
@@ -56,13 +56,14 @@ public class ScimGroupsResource {
     @Path("/{id}")
     @OmadaSwagger
     public Response getGroup(@PathParam("id") String id) {
-        log.debug("GET Group: id={}", id);
+        log.info("GET Group - innkommende request: id={}", id);
         long startTid = System.currentTimeMillis();
 
         Optional<ScimGroup> group = groupService.getGroup(id);
 
         if (group.isEmpty()) {
             long kalltid = System.currentTimeMillis() - startTid;
+            log.info("GET Group: id={} - IKKE FUNNET, kalltid={}ms", id, kalltid);
             kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id,
                     Response.Status.NOT_FOUND.getStatusCode(), kalltid, null, "Group not found");
             return Response.status(Response.Status.NOT_FOUND)
@@ -72,6 +73,7 @@ public class ScimGroupsResource {
 
         long kalltid = System.currentTimeMillis() - startTid;
         String responseJson = toJson(group.get());
+        log.info("GET Group: id={} - FUNNET, kalltid={}ms, svar: {}", id, kalltid, responseJson);
         kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id,
                 Response.Status.OK.getStatusCode(), kalltid, responseJson, null);
 
@@ -88,7 +90,7 @@ public class ScimGroupsResource {
             @QueryParam("count") @DefaultValue("100") int count,
             @QueryParam("filter") String filter) {
 
-        log.debug("LIST Groups: startIndex={}, count={}, filter={}", startIndex, count, filter);
+        log.info("LIST Groups - innkommende request: startIndex={}, count={}, filter={}", startIndex, count, filter);
         long startTid = System.currentTimeMillis();
 
         if (filter != null) {
@@ -105,6 +107,8 @@ public class ScimGroupsResource {
         response.setResources(groupPage.getContent());
 
         long kalltid = System.currentTimeMillis() - startTid;
+        log.info("LIST Groups fullført: totalResults={}, returnert={}, kalltid={}ms",
+                response.getTotalResults(), response.getItemsPerPage(), kalltid);
         kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups",
                 Response.Status.OK.getStatusCode(), kalltid, toJson(response),
                 "totalResults=" + response.getTotalResults());
@@ -118,10 +122,10 @@ public class ScimGroupsResource {
     @POST
     @Unprotected
     @OmadaSwagger
-    public Response createGroup(ScimGroup group) {
-        log.warn("CREATE Group - ikke tillatt (read-only)");
+    public Response createGroup(String body) {
+        log.warn("CREATE Group - ikke tillatt (read-only), innkommende body: {}", body);
         kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Groups",
-                Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, null, null, "Read-only - ikke støttet");
+                Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, body, null, "Read-only - ikke støttet");
         return Response.status(Response.Status.METHOD_NOT_ALLOWED)
                 .entity("{\"detail\":\"Groups er read-only - POST ikke støttet\"}")
                 .build();
@@ -134,10 +138,10 @@ public class ScimGroupsResource {
     @Path("/{id}")
     @Unprotected
     @OmadaSwagger
-    public Response updateGroup(@PathParam("id") String id, ScimGroup group) {
-        log.warn("UPDATE Group {} - ikke tillatt (read-only)", id);
+    public Response updateGroup(@PathParam("id") String id, String body) {
+        log.warn("UPDATE Group - ikke tillatt (read-only): id={}, innkommende body: {}", id, body);
         kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id,
-                Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, null, null, "Read-only - ikke støttet");
+                Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, body, null, "Read-only - ikke støttet");
         return Response.status(Response.Status.METHOD_NOT_ALLOWED)
                 .entity("{\"detail\":\"Groups er read-only - PUT ikke støttet\"}")
                 .build();
@@ -151,9 +155,9 @@ public class ScimGroupsResource {
     @Unprotected
     @OmadaSwagger
     public Response deleteGroup(@PathParam("id") String id) {
-        log.warn("DELETE Group {} - ikke tillatt (read-only)", id);
+        log.warn("DELETE Group - ikke tillatt (read-only): id={}", id);
         kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id,
-                Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, null, null, "Read-only - ikke støttet");
+                Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), 0, id, null, "Read-only - ikke støttet");
         return Response.status(Response.Status.METHOD_NOT_ALLOWED)
                 .entity("{\"detail\":\"Groups er read-only - DELETE ikke støttet\"}")
                 .build();

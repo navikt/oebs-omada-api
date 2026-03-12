@@ -27,6 +27,16 @@ public class PlsqlProcedureResult {
 		this.message = message;
 	}
 
+	public PlsqlProcedureResult(String errbuf, String retcode) {
+		this.message = errbuf;
+		this.data = retcode;
+		try {
+			this.messageNumber = retcode != null ? Integer.parseInt(retcode.trim()) : PlsqlMessageCodes.OK;
+		} catch (NumberFormatException e) {
+			this.messageNumber = PlsqlMessageCodes.OK;
+		}
+	}
+
 	public PlsqlProcedureResult(Clob clob, BigDecimal messageNumber, String message) {
 		try {
 			this.data = clob != null ? clob.getSubString(1, (int) clob.length()) : null;

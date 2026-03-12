@@ -31,13 +31,12 @@ import static no.nav.oebs.api.config.common.mdc.MdcOperations.generateCorrelatio
 @Repository
 public class PlsqlProcedureRepository {
 
-	// Generelle parameternavn; behøver ikke å matche hva som brukes i PL/SQL.
-	// private static final String ID_PARAM = "id";
-	private static final String OPERATION_PARAM = "operation";
-	private static final String DATA_IN_PARAM = "data_in";
-	private static final String DATA_OUT_PARAM = "data_out";
-	private static final String MESSAGE_NO_PARAM = "msg_no";
-	private static final String MESSAGE_PARAM = "msg";
+	// Parameternavn matcher InsertOmadaMessage-signaturen eksakt
+	private static final String ERRBUF_PARAM         = "errbuf";
+	private static final String RETCODE_PARAM        = "retcode";
+	private static final String ORG_ID_PARAM         = "p_org_id";
+	private static final String JSON_MESSAGE_PARAM   = "p_json_message";
+	private static final String OPERASJON_PARAM      = "p_operasjon";
 
 	private KallLoggRepository kallLoggRepository;
 
@@ -53,41 +52,31 @@ public class PlsqlProcedureRepository {
 		this.kallLoggRepository = kallLoggRepository;
 	}
 
-	public PlsqlProcedureResult executeInOutProcedure(String procedureName, String operation, String dataIn) {
-		PlsqlProcedureResult result = null;
-		Exception exception = null;
+	public PlsqlProcedureResult executeInOutProcedure(String procedureName, String operasjon, Long orgId, String jsonMessage) {
 		long startTime = System.currentTimeMillis();
 
 		try {
-
 			validateProcedureName(procedureName);
 
-			SimpleJdbcCall jdbcCall = getJdbcCall(procedureName, //
-					new SqlParameter(OPERATION_PARAM, Types.VARCHAR), //
-					new SqlParameter(DATA_IN_PARAM, Types.CLOB), //
-					new SqlOutParameter(DATA_OUT_PARAM, Types.CLOB), //
-					new SqlOutParameter(MESSAGE_NO_PARAM, Types.NUMERIC), //
-					new SqlOutParameter(MESSAGE_PARAM, Types.VARCHAR));
+			SimpleJdbcCall jdbcCall = getJdbcCall(procedureName,
+					new SqlOutParameter(ERRBUF_PARAM,       Types.VARCHAR),
+					new SqlOutParameter(RETCODE_PARAM,      Types.VARCHAR),
+					new SqlParameter(ORG_ID_PARAM,          Types.NUMERIC),
+					new SqlParameter(JSON_MESSAGE_PARAM,    Types.CLOB),
+					new SqlParameter(OPERASJON_PARAM,       Types.VARCHAR));
 
-			SqlParameterSource inParams = new MapSqlParameterSource() //
-					.addValue(OPERATION_PARAM, operation) //
-					.addValue(DATA_IN_PARAM, dataIn);
+			SqlParameterSource inParams = new MapSqlParameterSource()
+					.addValue(ORG_ID_PARAM,       orgId)
+					.addValue(JSON_MESSAGE_PARAM, jsonMessage)
+					.addValue(OPERASJON_PARAM,    operasjon);
 
-			result = executeProcedure(jdbcCall, inParams);
-
-			if (result.getMessageNumber() < 0 ) {
-				throw new UgyldigInputException("Ingen data funnet");
-			}
-
-			return result;
+			return executeProcedure(jdbcCall, inParams);
 
 		} catch (Exception e) {
 			throw e;
-
 		} finally {
 			long endTime = System.currentTimeMillis();
-
-			// logProcedureCall(procedureName, dataIn, result, endTime - startTime, exception);
+			// logProcedureCall(procedureName, jsonMessage, result, endTime - startTime, null);
 		}
 	}
 
@@ -121,11 +110,10 @@ public class PlsqlProcedureRepository {
 	private PlsqlProcedureResult executeProcedure(SimpleJdbcCall jdbcCall, SqlParameterSource inParams) {
 		Map<String, Object> outParams = jdbcCall.execute(inParams);
 
-		Clob dataOut = (Clob) outParams.get(DATA_OUT_PARAM);
-		BigDecimal messageNumber = (BigDecimal) outParams.get(MESSAGE_NO_PARAM);
-		String message = (String) outParams.get(MESSAGE_PARAM);
+		String errbuf  = (String) outParams.get(ERRBUF_PARAM);
+		String retcode = (String) outParams.get(RETCODE_PARAM);
 
-		return new PlsqlProcedureResult(dataOut, messageNumber, message);
+		return new PlsqlProcedureResult(errbuf, retcode);
 	}
 
 	private void logProcedureCall(String procedureName, String dataIn, PlsqlProcedureResult result, long executionTime,

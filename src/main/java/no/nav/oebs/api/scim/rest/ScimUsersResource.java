@@ -127,8 +127,19 @@ public class ScimUsersResource {
      */
     @POST
     @OmadaSwagger
-    public Response createUser(ScimUser user) {
-        log.info("CREATE User: userName={}", user != null ? user.getUserName() : null);
+    @Consumes({"application/scim+json", "application/json"})
+    public Response createUser(String body) {
+        ScimUser user;
+        try {
+            user = objectMapper.readValue(body, ScimUser.class);
+        } catch (JsonProcessingException e) {
+            log.error("Feil ved deserialisering av SCIM JSON til ScimUser", e);
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"detail\":\"Ugyldig SCIM bruker-data: " + e.getMessage() + "\"}")
+                    .build();
+        }
+
+        log.info("CREATE User: userName={}", user.getUserName());
 
         String userJson;
         try {
@@ -164,7 +175,18 @@ public class ScimUsersResource {
     @PUT
     @Path("/{id}")
     @OmadaSwagger
-    public Response updateUser(@PathParam("id") String id, ScimUser user) {
+    @Consumes({"application/scim+json", "application/json"})
+    public Response updateUser(@PathParam("id") String id, String body) {
+        ScimUser user;
+        try {
+            user = objectMapper.readValue(body, ScimUser.class);
+        } catch (JsonProcessingException e) {
+            log.error("Feil ved deserialisering av SCIM JSON til ScimUser", e);
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"detail\":\"Ugyldig SCIM bruker-data: " + e.getMessage() + "\"}")
+                    .build();
+        }
+
         log.info("UPDATE User: id={}", id);
 
         String userJson;

@@ -25,8 +25,8 @@ public class ScimUserMapper {
         ScimUser user = new ScimUser();
 
         // Core attributes
-        user.setId(entity.getBrukerId());
-        user.setExternalId(entity.getNavId());
+        user.setId(entity.getNavId());
+        user.setExternalId(entity.getBrukerId());
         user.setUserName(entity.getBrukerId());
         user.setActive(entity.isActive());
 
@@ -75,7 +75,7 @@ public class ScimUserMapper {
 
         // NAV OeBS custom extension
         NavOebsExtension navExt = new NavOebsExtension();
-        navExt.setFullmakt(null); // TODO: hent fullmakt fra kilde når tilgjengelig
+        navExt.setFullmakt(entity.getFullmakt());
         user.addExtension(navExt);
 
         // Meta

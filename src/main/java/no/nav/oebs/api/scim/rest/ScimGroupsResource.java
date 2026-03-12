@@ -11,7 +11,6 @@ import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.scim.service.ScimGroupService;
-import no.nav.security.token.support.core.api.Protected;
 import no.nav.security.token.support.core.api.Unprotected;
 import org.apache.directory.scim.spec.resources.ScimGroup;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +26,7 @@ import java.util.Optional;
  * GET /scim/v2/Groups/{id}
  */
 @Slf4j
+@Unprotected
 @Component
 @Path("/Groups")
 @Produces("application/scim+json")
@@ -54,7 +54,6 @@ public class ScimGroupsResource {
      */
     @GET
     @Path("/{id}")
-    @Protected
     @OmadaSwagger
     public Response getGroup(@PathParam("id") String id) {
         log.debug("GET Group: id={}", id);
@@ -83,7 +82,6 @@ public class ScimGroupsResource {
      * GET /scim/v2/Groups?startIndex={n}&count={m}
      */
     @GET
-    @Protected
     @OmadaSwagger
     public Response listGroups(
             @QueryParam("startIndex") @DefaultValue("1") int startIndex,

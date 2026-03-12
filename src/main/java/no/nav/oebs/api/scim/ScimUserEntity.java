@@ -68,6 +68,9 @@ public class ScimUserEntity {
     @Column(name = "ARBEIDSSTED_FYLKE")
     private String arbeidsstedFylke;  // SCIM division (location_code)
 
+    @Column(name = "FULLMAKT")
+    private String fullmakt;  // per_job_definitions.segment1 - fullmakt-tittel fra per_jobs/per_job_definitions via assignment
+
     // Groups - hentes separat fra V_OMADA_USER_ALL_GROUPS
     @Transient
     private List<ScimGroupMembershipEntity> groups;

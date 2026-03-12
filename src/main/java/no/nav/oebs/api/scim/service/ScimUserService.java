@@ -32,37 +32,38 @@ public class ScimUserService {
     private final ScimUserMapper userMapper;
 
     /**
-     * Hent en bruker basert på userName (brukerId)
+     * Hent en bruker basert på SCIM id (navId)
      */
-    public Optional<ScimUser> getUser(String userName) {
-        log.debug("Henter bruker: {}", userName);
-
-        Optional<ScimUserEntity> userEntity = userRepository.findByBrukerId(userName);
-
-        if (userEntity.isEmpty()) {
-            log.debug("Bruker ikke funnet: {}", userName);
-            return Optional.empty();
-        }
-
-        // Hent gruppe-medlemskap
-        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByBrukerId(userName);
-
-        ScimUser scimUser = userMapper.toScimUser(userEntity.get(), groups);
-
-        log.debug("Bruker funnet: {} med {} grupper", userName, groups.size());
-        return Optional.of(scimUser);
-    }
-
-    /**
-     * Hent bruker basert på externalId (navId)
-     */
-    public Optional<ScimUser> getUserByExternalId(String navId) {
+    public Optional<ScimUser> getUser(String navId) {
         log.debug("Henter bruker med navId: {}", navId);
 
         Optional<ScimUserEntity> userEntity = userRepository.findByNavId(navId);
 
         if (userEntity.isEmpty()) {
-            log.debug("Bruker med navId {} ikke funnet", navId);
+            log.debug("Bruker ikke funnet: {}", navId);
+            return Optional.empty();
+        }
+
+        String brukerId = userEntity.get().getBrukerId();
+        // Hent gruppe-medlemskap
+        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByBrukerId(brukerId);
+
+        ScimUser scimUser = userMapper.toScimUser(userEntity.get(), groups);
+
+        log.debug("Bruker funnet: navId={} brukerId={} med {} grupper", navId, brukerId, groups.size());
+        return Optional.of(scimUser);
+    }
+
+    /**
+     * Hent bruker basert på SCIM externalId (brukerId)
+     */
+    public Optional<ScimUser> getUserByExternalId(String brukerId) {
+        log.debug("Henter bruker med brukerId: {}", brukerId);
+
+        Optional<ScimUserEntity> userEntity = userRepository.findByBrukerId(brukerId);
+
+        if (userEntity.isEmpty()) {
+            log.debug("Bruker med brukerId {} ikke funnet", brukerId);
             return Optional.empty();
         }
 

@@ -32,6 +32,9 @@ import java.util.Optional;
 public class ScimUsersResource {
 
     private static final String PLSQL_PROCEDURE_NAME = "XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage";
+    private static final String OPERASJON_NY     = "NY";
+    private static final String OPERASJON_ENDRE  = "ENDRE";
+    private static final String OPERASJON_SLETT  = "SLETT";
 
     private static final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
@@ -170,7 +173,7 @@ public class ScimUsersResource {
         }
 
         long startTid = System.currentTimeMillis();
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, userJson);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, OPERASJON_NY, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("CREATE User fullført: messageNumber={}, message={}, kalltid={}ms",
@@ -236,7 +239,7 @@ public class ScimUsersResource {
         }
 
         long startTid = System.currentTimeMillis();
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, userJson);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, OPERASJON_ENDRE, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("UPDATE User fullført: id={}, messageNumber={}, message={}, kalltid={}ms",
@@ -266,7 +269,7 @@ public class ScimUsersResource {
         }
 
         long startTid = System.currentTimeMillis();
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, id);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, OPERASJON_SLETT, id);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("DELETE User fullført: id={}, messageNumber={}, message={}, kalltid={}ms",

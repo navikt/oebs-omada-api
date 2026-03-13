@@ -48,3 +48,4 @@ springdoc:
 oebs:
   plsql:
     insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}
+    org-id: ${PLSQL_ORG_ID:0}

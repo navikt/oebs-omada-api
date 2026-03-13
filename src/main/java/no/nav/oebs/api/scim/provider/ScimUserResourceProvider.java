@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.db.repository.PlsqlProcedureRepository;
+import no.nav.oebs.api.db.repository.PlsqlProcedureRepository.Operasjon;
 import no.nav.oebs.api.db.repository.PlsqlProcedureResult;
 import no.nav.oebs.api.scim.extension.NavOebsExtension;
 import no.nav.oebs.api.scim.KallLoggHelper;
@@ -101,14 +102,24 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
 
     @Override
     public ScimUser create(ScimUser resource) {
-        log.info("CREATE User: userName={}", resource.getUserName());
+        log.info("CREATE User: userName={}, id={}", resource.getUserName(), resource.getId());
         long startTid = System.currentTimeMillis();
 
+        if (resource.getId() == null || resource.getId().isBlank()) {
+            if (resource.getExternalId() != null && !resource.getExternalId().isBlank()) {
+                log.warn("CREATE User: id mangler i request, bruker externalId={} som id", resource.getExternalId());
+                resource.setId(resource.getExternalId());
+            } else {
+                log.error("CREATE User: verken id eller externalId er satt — SCIMple kan ikke generere Location-header");
+            }
+        }
+
         String userJson = toJson(resource);
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, userJson);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.NY, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
-        log.info("CREATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
+        log.info("CREATE User fullført: id={}, messageNumber={}, message={}",
+                resource.getId(), result.getMessageNumber(), result.getMessage());
         kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
 
@@ -123,7 +134,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         long startTid = System.currentTimeMillis();
 
         String userJson = toJson(resource);
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, userJson);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.ENDRE, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("UPDATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
@@ -145,7 +156,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         log.info("DELETE User: id={}", id);
         long startTid = System.currentTimeMillis();
 
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, id);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.SLETTE, id);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("DELETE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
@@ -162,4 +173,3 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         }
     }
 }
-

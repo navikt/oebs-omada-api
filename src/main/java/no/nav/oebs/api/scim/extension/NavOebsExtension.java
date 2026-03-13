@@ -28,7 +28,7 @@ public class NavOebsExtension implements ScimExtension {
 
     @ScimAttribute(
         description = "Fullmakt tildelt brukeren i OeBS",
-        mutability = Schema.Attribute.Mutability.READ_ONLY
+        mutability = Schema.Attribute.Mutability.READ_WRITE
     )
     private String fullmakt;
 

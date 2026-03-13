@@ -1,10 +1,7 @@
 package no.nav.oebs.api.config;
 
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
-import no.nav.oebs.api.scim.provider.ScimGroupResourceProvider;
-import no.nav.oebs.api.scim.provider.ScimUserResourceProvider;
-import org.apache.directory.scim.core.repository.DefaultPatchHandler;
+import lombok.extern.slf4j.Slf4j;import org.apache.directory.scim.core.repository.DefaultPatchHandler;
 import org.apache.directory.scim.core.repository.PatchHandler;
 import org.apache.directory.scim.core.repository.Repository;
 import org.apache.directory.scim.core.repository.RepositoryRegistry;
@@ -16,48 +13,33 @@ import org.apache.directory.scim.server.rest.EtagGenerator;
 import org.apache.directory.scim.server.rest.GroupResourceImpl;
 import org.apache.directory.scim.server.rest.ScimResourceHelper;
 import org.apache.directory.scim.server.rest.UserResourceImpl;
+import org.apache.directory.scim.spec.resources.ScimGroup;
 import org.apache.directory.scim.spec.resources.ScimResource;
+import org.apache.directory.scim.spec.resources.ScimUser;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-import jakarta.annotation.Nullable;
-import javax.sql.DataSource;
 import java.util.List;
 
 /**
- * Manuell konfigurasjon av Apache SCIMple-komponenter.
- * Erstatter ScimpleSpringConfiguration (som ikke fungerer med Spring Boot 4
- * fordi den refererer til den fjernede JerseyAutoConfiguration).
-*/
+ * Konfigurasjon av Apache SCIMple-komponenter.
+ * Følger mønsteret fra den originale {@code ScimpleSpringConfiguration} i SCIMple:
+ * bruker {@code @AutoConfiguration} og {@code @ConditionalOnMissingBean} slik at
+ * conditions evalueres korrekt etter at alle bruker-definerte beans er registrert.
+ * Erstatter ScimpleSpringConfiguration (som refererer til den fjernede JerseyAutoConfiguration).
+ */
 @Slf4j
-@Configuration
+@AutoConfiguration
 public class ScimpleConfig {
-
-    private final ScimUserResourceProvider userRepository;
-    private final ScimGroupResourceProvider groupRepository;
-    private final DataSource dataSource;
-
-    @Autowired
-    public ScimpleConfig(
-            ScimUserResourceProvider userRepository,
-            ScimGroupResourceProvider groupRepository,
-            @Nullable DataSource dataSource) {
-        this.userRepository = userRepository;
-        this.groupRepository = groupRepository;
-        this.dataSource = dataSource;
-    }
 
     @PostConstruct
     public void logScimEndpoints() {
         log.info("━━━ SCIMple konfigurasjon starter ━━━━━━━━━━━━━━━━━━━━━━");
-        log.info("  UserRepository  : {}", userRepository.getClass().getSimpleName());
-        log.info("  GroupRepository : {}", groupRepository.getClass().getSimpleName());
-        log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         log.info("╔══════════════════════════════════════════════════════╗");
         log.info("║         SCIM 2.0 API Endpoints (via SCIMple)         ║");
         log.info("╠══════════════════════════════════════════════════════╣");
@@ -75,67 +57,68 @@ public class ScimpleConfig {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public ServerConfiguration serverConfiguration() {
-        log.info("  [1/6] Oppretter ServerConfiguration...");
-        ServerConfiguration cfg = new ServerConfiguration();
         log.info("  [1/6] ServerConfiguration OK");
-        return cfg;
+        return new ServerConfiguration();
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public EtagGenerator etagGenerator() {
-        log.info("  [2/6] Oppretter EtagGenerator...");
-        EtagGenerator gen = new EtagGenerator();
         log.info("  [2/6] EtagGenerator OK");
-        return gen;
+        return new EtagGenerator();
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public SchemaRegistry schemaRegistry() {
-        log.info("  [3/6] Oppretter SchemaRegistry...");
+        log.info("  [3/6] SchemaRegistry — registrerer ScimUser og ScimGroup skjemaer...");
         SchemaRegistry registry = new SchemaRegistry();
-        log.info("  [3/6] SchemaRegistry OK");
+        try {
+            registry.addSchema(ScimUser.class, List.of());
+            registry.addSchema(ScimGroup.class, List.of());
+            log.info("  [3/6] SchemaRegistry OK — ScimUser og ScimGroup registrert");
+        } catch (Exception e) {
+            log.error("  [3/6] SchemaRegistry FEIL ved skjemaregistrering: {}", e.getMessage(), e);
+        }
         return registry;
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public PatchHandler patchHandler(SchemaRegistry schemaRegistry) {
-        log.info("  [4/6] Oppretter PatchHandler (DefaultPatchHandler)...");
-        PatchHandler handler = new DefaultPatchHandler(schemaRegistry);
         log.info("  [4/6] PatchHandler OK");
-        return handler;
+        return new DefaultPatchHandler(schemaRegistry);
     }
 
+    /**
+     * Spring samler automatisk alle beans av typen {@code Repository<? extends ScimResource>}
+     * — dvs. ScimUserResourceProvider og ScimGroupResourceProvider.
+     */
     @Bean
-    public RepositoryRegistry repositoryRegistry(SchemaRegistry schemaRegistry) {
-        if (dataSource == null) {
-            log.warn("  [5/6] DataSource ikke tilgjengelig — RepositoryRegistry hoppes over");
-            return null;
-        }
-        log.info("  [5/6] Oppretter RepositoryRegistry...");
-        List<Repository<? extends ScimResource>> repositories = List.of(userRepository, groupRepository);
-        log.info("  [5/6] Registrerer {} repositories: {}",
+    @ConditionalOnMissingBean
+    public RepositoryRegistry repositoryRegistry(
+            SchemaRegistry schemaRegistry,
+            List<Repository<? extends ScimResource>> repositories) {
+        log.info("  [5/6] RepositoryRegistry — registrerer {} repositories: {}",
                 repositories.size(),
                 repositories.stream().map(r -> r.getClass().getSimpleName()).toList());
         RepositoryRegistry registry = new RepositoryRegistry(schemaRegistry);
         registry.registerRepositories(repositories);
-        log.info("  [5/6] RepositoryRegistry OK — {} repositories registrert", repositories.size());
+        log.info("  [5/6] RepositoryRegistry OK");
         return registry;
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public ResourceConfig scimpleJerseyConfig(
             SchemaRegistry schemaRegistry,
-            @Nullable RepositoryRegistry repositoryRegistry,
+            RepositoryRegistry repositoryRegistry,
             ServerConfiguration serverConfiguration,
             EtagGenerator etagGenerator) {
 
-        if (dataSource == null || repositoryRegistry == null) {
-            log.warn("  [6/6] DataSource/RepositoryRegistry ikke tilgjengelig — scimpleJerseyConfig hoppes over");
-            return null;
-        }
-        log.info("  [6/6] Konfigurerer Jersey ResourceConfig for SCIMple...");
-        log.info("  [6/6] Registrerer JAX-RS ressursklasser: {}",
+        log.info("  [6/6] Konfigurerer Jersey ResourceConfig — JAX-RS klasser: {}",
                 ScimResourceHelper.scimpleFeatureAndResourceClasses().stream()
                         .map(Class::getSimpleName).sorted().toList());
 
@@ -146,20 +129,16 @@ public class ScimpleConfig {
             }
         });
 
+        // Bridge Spring Beans inn i HK2 slik at Jersey kan injisere dem
+        // i UserResourceImpl og GroupResourceImpl sine konstruktører
         config.register(new AbstractBinder() {
             @Override
             protected void configure() {
-                log.info("  [6/6] HK2 binder: UserResourceImpl → UserResource");
                 bind(UserResourceImpl.class).to(UserResource.class);
-                log.info("  [6/6] HK2 binder: GroupResourceImpl → GroupResource");
                 bind(GroupResourceImpl.class).to(GroupResource.class);
-                log.info("  [6/6] HK2 binder: SchemaRegistry (instance)");
                 bind(schemaRegistry).to(SchemaRegistry.class);
-                log.info("  [6/6] HK2 binder: RepositoryRegistry (instance)");
                 bind(repositoryRegistry).to(RepositoryRegistry.class);
-                log.info("  [6/6] HK2 binder: ServerConfiguration (instance)");
                 bind(serverConfiguration).to(ServerConfiguration.class);
-                log.info("  [6/6] HK2 binder: EtagGenerator (instance)");
                 bind(etagGenerator).to(EtagGenerator.class);
             }
         });
@@ -169,14 +148,9 @@ public class ScimpleConfig {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     @SuppressWarnings("NullableProblems")
-    public ServletRegistrationBean<ServletContainer> scimpleServlet(
-            @Nullable ResourceConfig scimpleJerseyConfig) {
-
-        if (dataSource == null || scimpleJerseyConfig == null) {
-            log.warn("  [7/7] DataSource/ResourceConfig ikke tilgjengelig — ScimpleServlet hoppes over");
-            return null;
-        }
+    public ServletRegistrationBean<ServletContainer> scimpleServlet(ResourceConfig scimpleJerseyConfig) {
         log.info("  [7/7] Registrerer SCIMple Jersey-servlet på /scim/v2/*...");
         ServletContainer container = new ServletContainer(scimpleJerseyConfig);
         ServletRegistrationBean<ServletContainer> registration =

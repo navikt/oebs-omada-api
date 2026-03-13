@@ -91,9 +91,10 @@ public class PlsqlProcedureRepository {
 	}
 
 	private void validateProcedureName(String procedureName) {
-		if (procedureName.split("\\.").length != 2) {
+		int parts = procedureName.split("\\.").length;
+		if (parts != 2 && parts != 3) {
 			throw new IllegalArgumentException(
-					"Feil format på PL/SQL-prosedyrenavnet '" + procedureName + "'; skal ha format 'pakkenavn.prosedyrenavn'");
+					"Feil format på PL/SQL-prosedyrenavnet '" + procedureName + "'; skal ha format 'pakkenavn.prosedyrenavn' eller 'schema.pakkenavn.prosedyrenavn'");
 		}
 	}
 
@@ -102,17 +103,26 @@ public class PlsqlProcedureRepository {
 		if (jdbcCall == null) {
 			String[] tokens = procedureName.split("\\.");
 
-			jdbcCall = new SimpleJdbcCall(jdbcTemplate) //
-					.withCatalogName(tokens[0]) //
-					.withProcedureName(tokens[1]) //
-					.withoutProcedureColumnMetaDataAccess() //
+			jdbcCall = new SimpleJdbcCall(jdbcTemplate);
+
+			if (tokens.length == 3) {
+				// Format: SCHEMA.PAKKE.PROSEDYRE — brukes når kalleren ikke eier pakken
+				jdbcCall.withSchemaName(tokens[0])
+						.withCatalogName(tokens[1])
+						.withProcedureName(tokens[2]);
+			} else {
+				// Format: PAKKE.PROSEDYRE
+				jdbcCall.withCatalogName(tokens[0])
+						.withProcedureName(tokens[1]);
+			}
+
+			jdbcCall.withoutProcedureColumnMetaDataAccess()
 					.declareParameters(declaredParameters);
 
 			jdbcCallCache.put(procedureName, jdbcCall);
-
-			log.debug("Oppretter og cacher SimpleJdbcCall-objekt for '" + procedureName + "'");
+			log.debug("Oppretter og cacher SimpleJdbcCall-objekt for '{}'", procedureName);
 		} else {
-			log.debug("Gjenbruker cachet SimpleJdbcCall-objekt for '" + procedureName + "'");
+			log.debug("Gjenbruker cachet SimpleJdbcCall-objekt for '{}'", procedureName);
 		}
 		return jdbcCall;
 	}

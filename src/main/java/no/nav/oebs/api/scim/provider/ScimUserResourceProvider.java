@@ -22,6 +22,7 @@ import org.apache.directory.scim.spec.filter.attribute.AttributeReference;
 import org.apache.directory.scim.spec.patch.PatchOperation;
 import org.apache.directory.scim.spec.resources.ScimExtension;
 import org.apache.directory.scim.spec.resources.ScimUser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +39,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ScimUserResourceProvider implements Repository<ScimUser> {
 
-    private static final String PLSQL_PROCEDURE_NAME = "XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage";
+    @Value("${oebs.plsql.insert-procedure:XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}")
+    private String plsqlProcedureName;
 
     private final ScimUserService userService;
     private final PlsqlProcedureRepository plsqlRepository;
@@ -103,7 +105,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         long startTid = System.currentTimeMillis();
 
         String userJson = toJson(resource);
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, userJson);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("CREATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
@@ -121,7 +123,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         long startTid = System.currentTimeMillis();
 
         String userJson = toJson(resource);
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, userJson);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("UPDATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
@@ -143,7 +145,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         log.info("DELETE User: id={}", id);
         long startTid = System.currentTimeMillis();
 
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(PLSQL_PROCEDURE_NAME, id);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, id);
         long kalltid = System.currentTimeMillis() - startTid;
 
         log.info("DELETE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());

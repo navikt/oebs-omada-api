@@ -44,3 +44,7 @@ springdoc:
   swagger-ui:
     disable-swagger-default-url: true
     tags-sorter: alpha
+
+oebs:
+  plsql:
+    insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}

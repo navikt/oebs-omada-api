@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.5</version>
         <relativePath/>
     </parent>
 
@@ -28,6 +28,13 @@
         <springdoc-openapi.version>1.8.0</springdoc-openapi.version>
         <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
         <lombok-version>1.18.38</lombok-version>
+        <netty.version>4.1.118.Final</netty.version>
+        <!-- CVE-2024-57699: json-smart 2.5.2+ -->
+        <json-smart.version>2.5.2</json-smart.version>
+        <!-- GHSA-72hv-8253-57qq: jackson 2.18.6+ -->
+        <jackson-bom.version>2.18.6</jackson-bom.version>
+        <!-- CVE-2025-48924: commons-lang3 3.18.0+ -->
+        <commons-lang3.version>3.18.0</commons-lang3.version>
 
     </properties>
 

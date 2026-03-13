@@ -33,11 +33,9 @@ import java.util.List;
  * Manuell konfigurasjon av Apache SCIMple-komponenter.
  * Erstatter ScimpleSpringConfiguration (som ikke fungerer med Spring Boot 4
  * fordi den refererer til den fjernede JerseyAutoConfiguration).
- * Kun aktiv når en DataSource er konfigurert (ikke i unit-tester uten DB).
  */
 @Slf4j
 @Configuration
-@ConditionalOnBean(DataSource.class)
 @RequiredArgsConstructor
 public class ScimpleConfig {
 
@@ -99,6 +97,7 @@ public class ScimpleConfig {
     }
 
     @Bean
+    @ConditionalOnBean(DataSource.class)
     public RepositoryRegistry repositoryRegistry(SchemaRegistry schemaRegistry) {
         log.info("  [5/6] Oppretter RepositoryRegistry...");
         List<Repository<? extends ScimResource>> repositories = List.of(userRepository, groupRepository);
@@ -114,6 +113,7 @@ public class ScimpleConfig {
     }
 
     @Bean
+    @ConditionalOnBean(DataSource.class)
     public ResourceConfig scimpleJerseyConfig(
             SchemaRegistry schemaRegistry,
             RepositoryRegistry repositoryRegistry,
@@ -159,6 +159,7 @@ public class ScimpleConfig {
     }
 
     @Bean
+    @ConditionalOnBean(DataSource.class)
     @SuppressWarnings("NullableProblems")
     public ServletRegistrationBean<ServletContainer> scimpleServlet(ResourceConfig scimpleJerseyConfig) {
         log.info("  [7/7] Registrerer SCIMple Jersey-servlet på /scim/v2/*...");

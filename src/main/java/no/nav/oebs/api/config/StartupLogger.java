@@ -45,7 +45,7 @@ public class StartupLogger {
         logServletMappings(event);
         logSpringMvcMappings();
         logScimStatus();
-        logSummary(event);
+        logSummary();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -62,11 +62,11 @@ public class StartupLogger {
         log.info("╔══════════════════════════════════════════════════════╗");
         log.info("║             APPLIKASJON KLAR                         ║");
         log.info("╠══════════════════════════════════════════════════════╣");
-        log.info("║  Navn     : {}",    padRight(appName,    36) + "║");
-        log.info("║  Versjon  : {}",    padRight(appVersion, 36) + "║");
-        log.info("║  Oppdatert: {}",    padRight(appUpdate,  36) + "║");
-        log.info("║  Miljø    : {}",    padRight(oebsEnv,    36) + "║");
-        log.info("║  Port     : {}",    padRight(String.valueOf(port), 36) + "║");
+        log.info("║  Navn     : {}",    padRight(appName)    + "║");
+        log.info("║  Versjon  : {}",    padRight(appVersion) + "║");
+        log.info("║  Oppdatert: {}",    padRight(appUpdate)  + "║");
+        log.info("║  Miljø    : {}",    padRight(oebsEnv)    + "║");
+        log.info("║  Port     : {}",    padRight(String.valueOf(port)) + "║");
         log.info("╚══════════════════════════════════════════════════════╝");
     }
 
@@ -144,22 +144,20 @@ public class StartupLogger {
         log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     }
 
-    private void logSummary(ApplicationReadyEvent event) {
+    private void logSummary() {
         long uptime;
         try {
             uptime = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();
         } catch (Exception e) {
             uptime = -1;
         }
+        String port = environment.getProperty("server.port", "8080");
         log.info("► Applikasjon klar på {}ms", uptime);
-        log.info("► Swagger UI: http://localhost:{}/swagger-ui/index.html",
-                environment.getProperty("server.port", "8080"));
-        log.info("► SCIM v2:    http://localhost:{}/scim/v2/Schemas",
-                environment.getProperty("server.port", "8080"));
-        log.info("► Health:     http://localhost:{}/internal/isalive",
-                environment.getProperty("server.port", "8080"));
-        log.info("► Actuator:   http://localhost:{}/actuator/health",
-                environment.getProperty("server.port", "8080"));
+        log.info("► Port        : {}", port);
+        log.info("► Swagger UI  : /swagger-ui/index.html");
+        log.info("► SCIM v2     : /scim/v2/Schemas");
+        log.info("► Health      : /internal/isalive");
+        log.info("► Actuator    : /actuator/health");
     }
 
     /** Leser en property uten å kaste exception hvis verdien inneholder en uresolvable placeholder. */
@@ -185,10 +183,10 @@ public class StartupLogger {
         }
     }
 
-    private static String padRight(String s, int n) {
+    private static String padRight(String s) {
         if (s == null) s = "";
-        if (s.length() >= n) return s.substring(0, n);
-        return s + " ".repeat(n - s.length());
+        if (s.length() >= 36) return s.substring(0, 36);
+        return s + " ".repeat(36 - s.length());
     }
 }
 

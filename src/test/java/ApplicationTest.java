@@ -41,6 +41,7 @@ class ApplicationTest {
     @MockitoBean ScimGroupRepository scimGroupRepository;
     @MockitoBean ScimGroupMembershipRepository scimGroupMembershipRepository;
 
+
     @Test
     void applicationContextShouldLoad() {
     }

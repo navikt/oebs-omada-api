@@ -52,38 +52,16 @@ public class ScimUserService {
     }
 
     /**
-     * Hent bruker basert på externalId (navId)
-     */
-    public Optional<ScimUser> getUserByExternalId(String navId) {
-        log.debug("Henter bruker med navId: {}", navId);
-
-        Optional<ScimUserEntity> userEntity = userRepository.findByNavId(navId);
-
-        if (userEntity.isEmpty()) {
-            log.debug("Bruker med navId {} ikke funnet", navId);
-            return Optional.empty();
-        }
-
-        List<ScimGroupMembershipEntity> groups =
-            groupMembershipRepository.findByBrukerId(userEntity.get().getBrukerId());
-
-        ScimUser scimUser = userMapper.toScimUser(userEntity.get(), groups);
-        return Optional.of(scimUser);
-    }
-
-    /**
      * Hent alle aktive brukere (paginert)
      */
     public Page<ScimUser> getUsers(int startIndex, int count) {
         log.debug("Henter brukere: startIndex={}, count={}", startIndex, count);
 
-        // SCIM bruker 1-basert indeksering, Spring Data bruker 0-basert
         int pageNumber = (startIndex - 1) / count;
         Pageable pageable = PageRequest.of(pageNumber, count);
 
         Page<ScimUserEntity> userPage = userRepository.findAllActiveUsers(pageable);
 
-        // Konverter til SCIM Users (uten grupper for ytelse)
         Page<ScimUser> scimUserPage = userPage.map(entity ->
             userMapper.toScimUser(entity, List.of())
         );
@@ -92,19 +70,5 @@ public class ScimUserService {
                   scimUserPage.getTotalElements());
 
         return scimUserPage;
-    }
-
-    /**
-     * Tell totalt antall aktive brukere
-     */
-    public long getTotalUsers() {
-        return userRepository.countActiveUsers();
-    }
-
-    /**
-     * Hent alle grupper for en bruker
-     */
-    public List<ScimGroupMembershipEntity> getUserGroups(String userName) {
-        return groupMembershipRepository.findByBrukerId(userName);
     }
 }

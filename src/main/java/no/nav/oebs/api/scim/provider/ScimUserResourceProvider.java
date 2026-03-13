@@ -101,7 +101,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     }
 
     @Override
-    public ScimUser create(ScimUser resource) {
+    public ScimUser create(ScimUser resource) throws ResourceException {
         log.info("CREATE User: userName={}, id={}", resource.getUserName(), resource.getId());
         long startTid = System.currentTimeMillis();
 
@@ -110,7 +110,8 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
                 log.warn("CREATE User: id mangler i request, bruker externalId={} som id", resource.getExternalId());
                 resource.setId(resource.getExternalId());
             } else {
-                log.error("CREATE User: verken id eller externalId er satt — SCIMple kan ikke generere Location-header");
+                log.error("CREATE User: verken id eller externalId er satt");
+                throw new ResourceException(400, "id eller externalId må være satt");
             }
         }
 
@@ -118,50 +119,70 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.NY, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
-        log.info("CREATE User fullført: id={}, messageNumber={}, message={}",
-                resource.getId(), result.getMessageNumber(), result.getMessage());
         kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
 
+        checkResult(result, "CREATE", resource.getId());
+        log.info("CREATE User OK: id={}", resource.getId());
         return resource;
     }
 
     @Override
     public ScimUser update(String id, String version, ScimUser resource,
                            Set<AttributeReference> includedAttributes,
-                           Set<AttributeReference> excludedAttributes) {
+                           Set<AttributeReference> excludedAttributes) throws ResourceException {
         log.info("UPDATE User: id={}", id);
         long startTid = System.currentTimeMillis();
+
+        resource.setId(id);
 
         String userJson = toJson(resource);
         PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.ENDRE, userJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
-        log.info("UPDATE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
         kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
 
+        checkResult(result, "UPDATE", id);
+        log.info("UPDATE User OK: id={}", id);
         return resource;
     }
 
     @Override
     public ScimUser patch(String id, String version, List<PatchOperation> patchOperations,
                           Set<AttributeReference> includedAttributes,
-                          Set<AttributeReference> excludedAttributes) {
-        throw new UnsupportedOperationException("PATCH is not supported for Users");
+                          Set<AttributeReference> excludedAttributes) throws ResourceException {
+        throw new ResourceException(501, "PATCH er ikke støttet for Users");
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(String id) throws ResourceException {
         log.info("DELETE User: id={}", id);
         long startTid = System.currentTimeMillis();
 
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.SLETTE, id);
+        String deleteJson = String.format("{\"id\":\"%s\"}", id);
+        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.SLETTE, deleteJson);
         long kalltid = System.currentTimeMillis() - startTid;
 
-        log.info("DELETE User fullført: messageNumber={}, message={}", result.getMessageNumber(), result.getMessage());
         kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id,
-                result.getMessageNumber(), kalltid, id, result.getData(), result.getMessage());
+                result.getMessageNumber(), kalltid, deleteJson, result.getData(), result.getMessage());
+
+        checkResult(result, "DELETE", id);
+        log.info("DELETE User OK: id={}", id);
+    }
+
+    /**
+     * Sjekker prosedyre-resultatet og kaster ResourceException ved feil.
+     * retcode: 0 = OK, 1 = advarsel (behandles som OK), 2+ = feil
+     */
+    private void checkResult(PlsqlProcedureResult result, String operasjon, String id) throws ResourceException {
+        if (result.getMessageNumber() < 0) {
+            log.error("{} User FEIL: id={}, errbuf={}", operasjon, id, result.getMessage());
+            throw new ResourceException(500, "Prosedyrefeil: " + result.getMessage());
+        }
+        if (result.getMessageNumber() > 0) {
+            log.warn("{} User advarsel: id={}, errbuf={}", operasjon, id, result.getMessage());
+        }
     }
 
     private String toJson(Object obj) {

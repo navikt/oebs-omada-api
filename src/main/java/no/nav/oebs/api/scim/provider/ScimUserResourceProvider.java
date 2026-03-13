@@ -132,6 +132,12 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
                            Set<AttributeReference> includedAttributes,
                            Set<AttributeReference> excludedAttributes) throws ResourceException {
         log.info("UPDATE User: id={}", id);
+
+        if (resource == null) {
+            log.error("UPDATE User: resource er null — mangler eller ugyldig request-body for id={}", id);
+            throw new ResourceException(400, "Request-body mangler eller kunne ikke deserialiseres");
+        }
+
         long startTid = System.currentTimeMillis();
 
         resource.setId(id);

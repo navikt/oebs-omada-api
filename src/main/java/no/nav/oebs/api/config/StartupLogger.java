@@ -9,7 +9,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
@@ -43,7 +42,6 @@ public class StartupLogger {
     public void onApplicationReady(ApplicationReadyEvent event) {
         logBanner();
         logServletMappings(event);
-        logSpringMvcMappings();
         logScimStatus();
         logSummary();
     }
@@ -112,23 +110,6 @@ public class StartupLogger {
         log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     }
 
-    private void logSpringMvcMappings() {
-        log.info("━━━ Spring MVC Request Mappings ━━━━━━━━━━━━━━━━━━━━━━━");
-        try {
-            Map<String, RequestMappingHandlerMapping> mappings =
-                    applicationContext.getBeansOfType(RequestMappingHandlerMapping.class);
-            mappings.forEach((beanName, mapping) ->
-                    mapping.getHandlerMethods().forEach((info, method) ->
-                            log.info("  {} → {}.{}",
-                                    info,
-                                    method.getBeanType().getSimpleName(),
-                                    method.getMethod().getName())));
-        } catch (Exception e) {
-            log.warn("  Kunne ikke lese MVC-mappings: {}", e.getMessage());
-        }
-        log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    }
-
     private void logScimStatus() {
         log.info("━━━ SCIMple Status ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         boolean scimpleActive = applicationContext.containsBean("scimpleServlet");
@@ -189,7 +170,5 @@ public class StartupLogger {
         return s + " ".repeat(36 - s.length());
     }
 }
-
-
 
 

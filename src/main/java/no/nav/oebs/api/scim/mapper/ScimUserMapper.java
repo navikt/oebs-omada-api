@@ -25,8 +25,8 @@ public class ScimUserMapper {
         ScimUser user = new ScimUser();
 
         // Core attributes
-        user.setId(entity.getNavId());
-        user.setExternalId(entity.getBrukerId());
+        user.setId(entity.getNavId());           // SCIM id = navId (f.eks. "S108633")
+        user.setExternalId(entity.getBrukerId()); // externalId = brukerId (OeBS-brukernavn)
         user.setUserName(entity.getBrukerId());
         user.setActive(entity.isActive());
 

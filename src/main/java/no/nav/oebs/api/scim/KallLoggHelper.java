@@ -1,4 +1,4 @@
-package no.nav.oebs.api.scim.rest;
+package no.nav.oebs.api.scim;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

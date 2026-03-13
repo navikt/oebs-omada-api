@@ -1,0 +1,42 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: oebs-omada-api-spring-boot
+  namespace: team-oebs
+  labels:
+    app: oebs-omada-api-spring-boot
+    team: team-oebs
+
+spec:
+  image: {{ image }}
+  port: 8080
+  replicas:
+    min: 1
+    max: 1
+
+  resources:
+    requests:
+      cpu: 400m
+      memory: 1024Mi
+    limits:
+      cpu: 4000m
+      memory: 2048Mi
+  azure:
+    application:
+      enabled: true
+  accessPolicy:
+    inbound:
+      rules:
+        - application: azure-token-generator
+          namespace: nais
+          cluster: dev-gcp
+  envFrom:
+    - secret: oebs-omada-u1
+
+  prometheus:
+    enabled: true
+    path: /actuator/prometheus
+
+  ingresses:
+     - "https://oebs-omada-api-spring-boot.intern.dev.nav.no"
+

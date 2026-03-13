@@ -1,34 +1,15 @@
 package no.nav.oebs.api.config;
 
-import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
-import no.nav.security.token.support.filter.JwtTokenValidationFilter;
-import no.nav.security.token.support.jaxrs.servlet.JaxrsJwtTokenValidationFilter;
 import no.nav.security.token.support.spring.api.EnableJwtTokenValidation;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
+/**
+ * Sikkerhetskonfigurasjon.
+ * {@code @EnableJwtTokenValidation} aktiverer JWT-validering for alle endepunkter unntatt
+ * de som er annotert med {@code @Unprotected} eller er i ignored packages.
+ * SCIMple-endepunkter beskyttes via {@code @Protected} / {@code @Unprotected} på ressursklassene.
+ */
 @Configuration
 @EnableJwtTokenValidation(ignore = { "org.springframework", "org.springdoc" })
 public class SecurityConfig {
-
-    @Bean
-    @Primary
-    public FilterRegistrationBean<JwtTokenValidationFilter> oidcTokenValidationFilterRegistrationBean(
-            JwtTokenValidationFilter tokenValidationFilter) {
-        var registration = new FilterRegistrationBean<>(tokenValidationFilter);
-        registration.setEnabled(false);
-        return registration;
-    }
-
-    @Bean
-    public FilterRegistrationBean<JaxrsJwtTokenValidationFilter> jaxrsJwtTokenValidationFilterBean(
-            MultiIssuerConfiguration multiIssuerConfiguration) {
-        var filter = new JaxrsJwtTokenValidationFilter(multiIssuerConfiguration);
-        var registration = new FilterRegistrationBean<>(filter);
-        registration.addUrlPatterns("/scim/v2/*");
-        registration.setOrder(1);
-        return registration;
-    }
 }

@@ -1,0 +1,21 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.apache.directory.scim.spring.ScimpleSpringConfiguration
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+      - org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
+  jpa:
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+
+OEBS_ENV: TEST
+APP_VERSION: 0.0.0-test
+APP_UPDATE: 2026-01-01
+APP_NAME: oebs-omada-api-test

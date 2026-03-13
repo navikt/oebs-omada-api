@@ -19,8 +19,6 @@ spring:
      active: nais
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration
-      - org.springframework.boot.autoconfigure.jersey.JerseyAutoConfiguration
       - org.apache.directory.scim.spring.ScimpleSpringConfiguration
   datasource:
     driver-class-name: oracle.jdbc.OracleDriver

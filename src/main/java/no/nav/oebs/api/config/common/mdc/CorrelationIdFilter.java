@@ -1,36 +1,43 @@
 package no.nav.oebs.api.config.common.mdc;
 
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.container.ContainerResponseFilter;
-import jakarta.ws.rs.ext.Provider;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
 
 /**
- * Jersey-filter som setter korrelasjons-ID i MDC for alle innkommende SCIM-requests.
- * Kjører i Jersey-konteksten (ikke Spring-filterkjeden) slik at MDC er tilgjengelig
- * i alle ressursklasser og KallLoggHelper.
+ * Spring-filter som setter korrelasjons-ID i MDC for alle innkommende requests,
+ * inkludert SCIM-endepunkter på /scim/v2/*.
+ * Leser X-Correlation-ID header om den finnes, ellers genereres en ny ID.
  */
 @Slf4j
-@Provider
-public class CorrelationIdFilter implements ContainerRequestFilter, ContainerResponseFilter {
+@Component
+public class CorrelationIdFilter extends OncePerRequestFilter {
 
     private static final String CORRELATION_ID_HEADER = "X-Correlation-ID";
 
     @Override
-    public void filter(ContainerRequestContext requestContext) {
-        String korrelasjonId = requestContext.getHeaderString(CORRELATION_ID_HEADER);
-        if (korrelasjonId == null || korrelasjonId.isBlank()) {
-            korrelasjonId = MdcOperations.generateCorrelationId();
-        }
-        MdcOperations.put(MdcOperations.MDC_CORRELATION_ID, korrelasjonId);
-        log.debug("Korrelasjons-ID satt: {}", korrelasjonId);
-    }
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+        try {
+            String korrelasjonId = request.getHeader(CORRELATION_ID_HEADER);
+            if (korrelasjonId == null || korrelasjonId.isBlank()) {
+                korrelasjonId = MdcOperations.generateCorrelationId();
+            }
+            MdcOperations.put(MdcOperations.MDC_CORRELATION_ID, korrelasjonId);
+            response.setHeader(CORRELATION_ID_HEADER, korrelasjonId);
+            log.debug("Korrelasjons-ID satt: {}", korrelasjonId);
 
-    @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        MdcOperations.remove(MdcOperations.MDC_CORRELATION_ID);
+            filterChain.doFilter(request, response);
+        } finally {
+            MdcOperations.remove(MdcOperations.MDC_CORRELATION_ID);
+        }
     }
 }
 

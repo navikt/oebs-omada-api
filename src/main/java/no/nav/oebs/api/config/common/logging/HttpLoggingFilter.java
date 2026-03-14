@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,7 +15,6 @@ import jakarta.validation.constraints.NotNull;
 import no.nav.oebs.api.config.common.mdc.MdcOperations;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.db.repository.KallLoggRepository;
-//import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -72,7 +70,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 					.korrelasjonId(MdcOperations.get(MdcOperations.MDC_CORRELATION_ID)) //
 					.tidspunkt(LocalDateTime.now()) //
 					.type(KallLogg.TYPE_REST) //
-					.kallRetning(requestToUse.getMethod().equals("POST") ? KallLogg.RETNING_UT: KallLogg.RETNING_INN) //
+					.kallRetning(KallLogg.RETNING_INN) //
 					.method(requestToUse.getMethod()) //
 					.operation(requestToUse.getRequestURI()) //
 					.status(responseToUse.getStatus()) //
@@ -115,7 +113,12 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 		HttpHeaders headers = new HttpHeaders();
 
 		for (String headerName : Collections.list(request.getHeaderNames())) {
-			headers.addAll(headerName, Collections.list(request.getHeaders(headerName)));
+			List<String> values = Collections.list(request.getHeaders(headerName));
+			if ("authorization".equalsIgnoreCase(headerName)) {
+				headers.add(headerName, "Bearer [MASKERT]");
+			} else {
+				headers.addAll(headerName, values);
+			}
 		}
 		return headers;
 	}

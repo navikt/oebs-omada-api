@@ -12,13 +12,11 @@ import org.apache.directory.scim.protocol.data.ErrorResponse;
 /**
  * Jersey ContainerRequestFilter som håndhever token-validering per HTTP-metode og path.
  * Logger alle avviste kall (401) til KallLogg.
- * Endepunkt                             | Metode                  | Krav
- * --------------------------------------|-------------------------|------------------
- * GET /scim/v2/Users/{id}               | GET med id-segment      | @Unprotected
- * GET /scim/v2/Users (liste)            | GET uten id-segment     | @Protected
- * POST/PUT/PATCH/DELETE /scim/v2/Users  | write                   | @Protected
- * GET /scim/v2/Groups                   | GET                     | @Protected
- * POST/PUT/PATCH/DELETE /scim/v2/Groups | write                   | @Unprotected
+ *
+ * Endepunkt                             | Metode | Krav
+ * --------------------------------------|--------|---------------------
+ * GET /Schemas, /ResourceTypes, /SPC    | GET    | @Unprotected
+ * Alt annet (Users og Groups)           | alle   | @Protected
  */
 @Slf4j
 @Provider
@@ -43,11 +41,15 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         }
 
         var tokenContext = JaxrsTokenValidationContextHolder.INSTANCE.getTokenValidationContext();
-        //noinspection ConstantConditions — getTokenValidationContext() kan returnere null ved manglende token tross Kotlin @NotNull
-        boolean hasValidToken = tokenContext != null && !tokenContext.getIssuers().isEmpty();
+        //noinspection ConstantConditions — kan returnere null ved manglende token tross Kotlin @NotNull
+        boolean hasValidToken = tokenContext != null
+                && tokenContext.getIssuers().stream().anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
 
         if (!hasValidToken) {
-            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {}", method, path);
+            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [context={}, issuers={}]",
+                    method, path,
+                    tokenContext == null ? "null" : "present",
+                    tokenContext == null ? "-" : tokenContext.getIssuers());
             ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
             kallLoggHelper.loggInn(method, "/scim/v2/" + path,
                     401, 0, null, errorResponse.getDetail());
@@ -58,10 +60,8 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
     /**
      * Returnerer true hvis kallet er åpent uten token.
      * Kun SCIM metadata-endepunkter er åpne:
-     *   GET /Schemas
-     *   GET /ResourceTypes
-     *   GET /ServiceProviderConfig
-     * Alt annet (Users og Groups alle metoder) krever gyldig token.
+     *   GET /Schemas, GET /ResourceTypes, GET /ServiceProviderConfig
+     * Alt annet krever gyldig token.
      */
     private boolean isUnprotected(String method, String path) {
         boolean isGet = method.equals("GET");

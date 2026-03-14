@@ -8,6 +8,13 @@ APP_VERSION: ${APP_VERSION:0.4.6}
 APP_UPDATE: ${APP_UPDATE:2026-02-23}
 APP_NAME: ${APP_NAME:oebs-omada-api}
 
+oebs:
+  scim:
+    base-url: ${SCIM_BASE_URL}
+  plsql:
+    insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}
+    org-id: ${PLSQL_ORG_ID:0}
+
 #no.nav.security.jwt:
 #   issuer:
 #     azure:
@@ -44,8 +51,3 @@ springdoc:
   swagger-ui:
     disable-swagger-default-url: true
     tags-sorter: alpha
-
-oebs:
-  plsql:
-    insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}
-    org-id: ${PLSQL_ORG_ID:0}

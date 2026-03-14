@@ -5,6 +5,7 @@ import no.nav.oebs.api.scim.ScimGroupMembershipEntity;
 import org.apache.directory.scim.spec.resources.ScimGroup;
 import org.apache.directory.scim.spec.resources.GroupMembership;
 import org.apache.directory.scim.spec.schema.Meta;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -12,6 +13,9 @@ import java.util.stream.Collectors;
 
 @Component
 public class ScimGroupMapper {
+
+    @Value("${oebs.scim.base-url:http://localhost:8080}")
+    private String baseUrl;
 
     /**
      * Konverter entity til SCIM Group objekt
@@ -29,9 +33,9 @@ public class ScimGroupMapper {
             List<GroupMembership> scimMembers = members.stream()
                 .map(m -> {
                     GroupMembership member = new GroupMembership();
-                    member.setValue(m.getBrukerId());  // userName (MSF4711)
+                    member.setValue(m.getBrukerId());
                     member.setDisplay(m.getBrukerId());
-                    member.setRef("https://example.com/scim/v2/Users/" + m.getBrukerId());
+                    member.setRef(baseUrl + "/scim/v2/Users/" + m.getBrukerId());
                     return member;
                 })
                 .collect(Collectors.toList());
@@ -41,6 +45,7 @@ public class ScimGroupMapper {
         // Meta
         Meta meta = new Meta();
         meta.setResourceType("Group");
+        meta.setLocation(baseUrl + "/scim/v2/Groups/" + entity.getScimId());
         if (entity.getOpprettetDato() != null) {
             meta.setCreated(entity.getOpprettetDato());
         }
@@ -52,12 +57,4 @@ public class ScimGroupMapper {
         return group;
     }
 
-    /**
-     * Konverter liste av entities til SCIM Groups
-     */
-    public List<ScimGroup> toScimGroups(List<ScimGroupEntity> entities) {
-        return entities.stream()
-            .map(entity -> toScimGroup(entity, null))
-            .collect(Collectors.toList());
-    }
 }

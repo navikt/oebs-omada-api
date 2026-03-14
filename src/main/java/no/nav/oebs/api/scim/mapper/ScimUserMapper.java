@@ -6,6 +6,7 @@ import no.nav.oebs.api.scim.extension.NavOebsExtension;
 import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import org.apache.directory.scim.spec.resources.*;
 import org.apache.directory.scim.spec.schema.Meta;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -17,6 +18,9 @@ import java.util.stream.Collectors;
  */
 @Component
 public class ScimUserMapper {
+
+    @Value("${oebs.scim.base-url:http://localhost:8080}")
+    private String baseUrl;
 
     /**
      * Konverter entity til SCIM User objekt
@@ -58,7 +62,7 @@ public class ScimUserMapper {
                     UserGroup gm = new UserGroup();
                     gm.setValue(g.getScimGroupId());
                     gm.setDisplay(g.getScimDisplayName());
-                    gm.setRef("https://example.com/scim/v2/Groups/" + g.getScimGroupId());
+                    gm.setRef(baseUrl + "/scim/v2/Groups/" + g.getScimGroupId());
                     return gm;
                 })
                 .collect(Collectors.toList());
@@ -81,6 +85,7 @@ public class ScimUserMapper {
         // Meta
         Meta meta = new Meta();
         meta.setResourceType("User");
+        meta.setLocation(baseUrl + "/scim/v2/Users/" + entity.getNavId());
         if (entity.getCreationDate() != null) {
             meta.setCreated(entity.getCreationDate());
         }
@@ -92,12 +97,4 @@ public class ScimUserMapper {
         return user;
     }
 
-    /**
-     * Konverter liste av entities til SCIM Users
-     */
-    public List<ScimUser> toScimUsers(List<ScimUserEntity> entities) {
-        return entities.stream()
-            .map(entity -> toScimUser(entity, Collections.emptyList()))
-            .collect(Collectors.toList());
-    }
 }

@@ -23,6 +23,7 @@ import org.apache.directory.scim.spec.filter.attribute.AttributeReference;
 import org.apache.directory.scim.spec.patch.PatchOperation;
 import org.apache.directory.scim.spec.resources.ScimExtension;
 import org.apache.directory.scim.spec.resources.ScimUser;
+import org.apache.directory.scim.spec.schema.Meta;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -123,6 +124,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
 
         checkResult(result, "CREATE", resource.getId());
+        ensureMeta(resource).setVersion("W/\"" + resource.getId().hashCode() + "\"");
         log.info("CREATE User OK: id={}", resource.getId());
         return resource;
     }
@@ -150,6 +152,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
                 result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
 
         checkResult(result, "UPDATE", id);
+        ensureMeta(resource).setVersion("W/\"" + (id + System.currentTimeMillis()).hashCode() + "\"");
         log.info("UPDATE User OK: id={}", id);
         return resource;
     }
@@ -189,6 +192,13 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         if (result.getMessageNumber() > 0) {
             log.warn("{} User advarsel: id={}, errbuf={}", operasjon, id, result.getMessage());
         }
+    }
+
+    private Meta ensureMeta(ScimUser resource) {
+        if (resource.getMeta() == null) {
+            resource.setMeta(new Meta());
+        }
+        return resource.getMeta();
     }
 
     private String toJson(Object obj) {

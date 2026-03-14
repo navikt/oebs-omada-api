@@ -4,8 +4,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
-import no.nav.security.token.support.jaxrs.JwtTokenContainerRequestFilter;
 import no.nav.security.token.support.jaxrs.servlet.JaxrsJwtTokenValidationFilter;
+import no.nav.oebs.api.config.common.security.ScimTokenValidationFilter;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
 import org.apache.directory.scim.core.repository.PatchHandler;
 import org.apache.directory.scim.core.repository.Repository;
@@ -120,8 +120,8 @@ public class ScimpleConfig {
             }
         });
 
-        // Registrer JWT-filter for @Protected / @Unprotected på SCIMple-endepunkter
-        config.register(JwtTokenContainerRequestFilter.class);
+        // Registrer custom token-valideringsfilter for @Protected / @Unprotected per metode/path
+        config.register(ScimTokenValidationFilter.class);
 
         config.register(new AbstractBinder() {
             @Override

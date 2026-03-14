@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
 import no.nav.security.token.support.jaxrs.servlet.JaxrsJwtTokenValidationFilter;
 import no.nav.oebs.api.config.common.security.ScimTokenValidationFilter;
+import no.nav.oebs.api.scim.KallLoggHelper;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
 import org.apache.directory.scim.core.repository.PatchHandler;
 import org.apache.directory.scim.core.repository.Repository;
@@ -111,7 +112,8 @@ public class ScimpleConfig {
             SchemaRegistry schemaRegistry,
             RepositoryRegistry repositoryRegistry,
             ServerConfiguration serverConfiguration,
-            EtagGenerator etagGenerator) {
+            EtagGenerator etagGenerator,
+            KallLoggHelper kallLoggHelper) {
 
         ResourceConfig config = ResourceConfig.forApplication(new jakarta.ws.rs.core.Application() {
             @Override
@@ -132,6 +134,7 @@ public class ScimpleConfig {
                 bind(repositoryRegistry).to(RepositoryRegistry.class);
                 bind(serverConfiguration).to(ServerConfiguration.class);
                 bind(etagGenerator).to(EtagGenerator.class);
+                bind(kallLoggHelper).to(KallLoggHelper.class);
             }
         });
 
@@ -155,9 +158,10 @@ public class ScimpleConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public FilterRegistrationBean<JaxrsJwtTokenValidationFilter> jaxrsJwtTokenValidationFilterRegistration(
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public FilterRegistrationBean jaxrsJwtTokenValidationFilterRegistration(
             MultiIssuerConfiguration multiIssuerConfiguration) {
-        FilterRegistrationBean<JaxrsJwtTokenValidationFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean registration = new FilterRegistrationBean();
         registration.setFilter(new JaxrsJwtTokenValidationFilter(multiIssuerConfiguration));
         registration.addUrlPatterns("/scim/v2/*");
         registration.setName("JaxrsJwtTokenValidationFilter");

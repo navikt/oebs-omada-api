@@ -68,66 +68,82 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     public ScimUser get(String id) throws ResourceException {
         log.debug("GET User: id={}", id);
         long startTid = System.currentTimeMillis();
-
-        Optional<ScimUser> user = userService.getUser(id);
-
-        long kalltid = System.currentTimeMillis() - startTid;
-        if (user.isEmpty()) {
-            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users/" + id, 404, kalltid, null, "User not found");
-            return null;
+        try {
+            Optional<ScimUser> user = userService.getUser(id);
+            long kalltid = System.currentTimeMillis() - startTid;
+            if (user.isEmpty()) {
+                kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users/" + id, 404, kalltid, null, "User not found");
+                return null;
+            }
+            String responseJson = toJson(user.get());
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users/" + id, 200, kalltid, responseJson, null);
+            return user.get();
+        } catch (Exception e) {
+            long kalltid = System.currentTimeMillis() - startTid;
+            log.error("GET User FEIL: id={}", id, e);
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users/" + id, 500, kalltid,
+                    errorJson(500, e.getMessage()), null);
+            throw new ResourceException(500, "Intern feil: " + e.getMessage());
         }
-
-        String responseJson = toJson(user.get());
-        kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users/" + id, 200, kalltid, responseJson, null);
-        return user.get();
     }
 
     @Override
     @SuppressWarnings("NullableProblems")
     public FilterResponse<ScimUser> find(Filter filter, PageRequest pageRequest, SortRequest sortRequest) {
-        int startIndex = pageRequest != null && pageRequest.getStartIndex() != null
-                ? pageRequest.getStartIndex() : 1;
-        int count = pageRequest != null && pageRequest.getCount() != null
-                ? pageRequest.getCount() : 100;
-
+        int startIndex = pageRequest != null && pageRequest.getStartIndex() != null ? pageRequest.getStartIndex() : 1;
+        int count      = pageRequest != null && pageRequest.getCount()      != null ? pageRequest.getCount()      : 100;
         log.debug("LIST Users: startIndex={}, count={}", startIndex, count);
         long startTid = System.currentTimeMillis();
-
-        Page<ScimUser> userPage = userService.getUsers(startIndex, count);
-
-        long kalltid = System.currentTimeMillis() - startTid;
-        kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users", 200, kalltid, null,
-                "totalResults=" + userPage.getTotalElements());
-
-        return new FilterResponse<>(userPage.getContent(), pageRequest, (int) userPage.getTotalElements());
+        try {
+            Page<ScimUser> userPage = userService.getUsers(startIndex, count);
+            long kalltid = System.currentTimeMillis() - startTid;
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users", 200, kalltid, null,
+                    "totalResults=" + userPage.getTotalElements());
+            return new FilterResponse<>(userPage.getContent(), pageRequest, (int) userPage.getTotalElements());
+        } catch (Exception e) {
+            long kalltid = System.currentTimeMillis() - startTid;
+            log.error("LIST Users FEIL", e);
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users", 500, kalltid,
+                    errorJson(500, e.getMessage()), null);
+            throw new RuntimeException("Intern feil: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public ScimUser create(ScimUser resource) throws ResourceException {
         log.info("CREATE User: userName={}, id={}", resource.getUserName(), resource.getId());
         long startTid = System.currentTimeMillis();
-
-        if (resource.getId() == null || resource.getId().isBlank()) {
-            if (resource.getExternalId() != null && !resource.getExternalId().isBlank()) {
-                log.warn("CREATE User: id mangler i request, bruker externalId={} som id", resource.getExternalId());
-                resource.setId(resource.getExternalId());
-            } else {
-                log.error("CREATE User: verken id eller externalId er satt");
-                throw new ResourceException(400, "id eller externalId må være satt");
+        try {
+            if (resource.getId() == null || resource.getId().isBlank()) {
+                if (resource.getExternalId() != null && !resource.getExternalId().isBlank()) {
+                    log.warn("CREATE User: id mangler, bruker externalId={} som id", resource.getExternalId());
+                    resource.setId(resource.getExternalId());
+                } else {
+                    log.error("CREATE User: verken id eller externalId er satt");
+                    long kalltid = System.currentTimeMillis() - startTid;
+                    kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users", 400, kalltid,
+                            toJson(resource), errorJson(400, "id eller externalId må være satt"), null);
+                    throw new ResourceException(400, "id eller externalId må være satt");
+                }
             }
+            String userJson = toJson(resource);
+            PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.NY, userJson);
+            long kalltid = System.currentTimeMillis() - startTid;
+            int httpStatus = result.getMessageNumber() < 0 ? 500 : 201;
+            kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users", httpStatus, kalltid, userJson, result.getData(), result.getMessage());
+            checkResult(result, "CREATE", resource.getId());
+            ensureMeta(resource).setVersion("W/\"" + resource.getId().hashCode() + "\"");
+            log.info("CREATE User OK: id={}", resource.getId());
+            return resource;
+        } catch (ResourceException e) {
+            throw e;
+        } catch (Exception e) {
+            long kalltid = System.currentTimeMillis() - startTid;
+            log.error("CREATE User FEIL: id={}", resource.getId(), e);
+            kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users", 500, kalltid,
+                    toJson(resource), errorJson(500, e.getMessage()), null);
+            throw new ResourceException(500, "Intern feil: " + e.getMessage());
         }
-
-        String userJson = toJson(resource);
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.NY, userJson);
-        long kalltid = System.currentTimeMillis() - startTid;
-
-        kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users",
-                result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
-
-        checkResult(result, "CREATE", resource.getId());
-        ensureMeta(resource).setVersion("W/\"" + resource.getId().hashCode() + "\"");
-        log.info("CREATE User OK: id={}", resource.getId());
-        return resource;
     }
 
     @Override
@@ -135,33 +151,43 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
                            Set<AttributeReference> includedAttributes,
                            Set<AttributeReference> excludedAttributes) throws ResourceException {
         log.info("UPDATE User: id={}", id);
-
-        if (resource == null) {
-            log.error("UPDATE User: resource er null — mangler eller ugyldig request-body for id={}", id);
-            throw new ResourceException(400, "Request-body mangler eller kunne ikke deserialiseres");
-        }
-
         long startTid = System.currentTimeMillis();
-
-        resource.setId(id);
-
-        String userJson = toJson(resource);
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.ENDRE, userJson);
-        long kalltid = System.currentTimeMillis() - startTid;
-
-        kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id,
-                result.getMessageNumber(), kalltid, userJson, result.getData(), result.getMessage());
-
-        checkResult(result, "UPDATE", id);
-        ensureMeta(resource).setVersion("W/\"" + (id + System.currentTimeMillis()).hashCode() + "\"");
-        log.info("UPDATE User OK: id={}", id);
-        return resource;
+        try {
+            if (resource == null) {
+                log.error("UPDATE User: resource er null for id={}", id);
+                kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id, 400, 0,
+                        null, errorJson(400, "Request-body mangler"), null);
+                throw new ResourceException(400, "Request-body mangler eller kunne ikke deserialiseres");
+            }
+            resource.setId(id);
+            String userJson = toJson(resource);
+            PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.ENDRE, userJson);
+            long kalltid = System.currentTimeMillis() - startTid;
+            int httpStatus = result.getMessageNumber() < 0 ? 500 : 200;
+            kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id, httpStatus, kalltid, userJson, result.getData(), result.getMessage());
+            checkResult(result, "UPDATE", id);
+            ensureMeta(resource).setVersion("W/\"" + (id + System.currentTimeMillis()).hashCode() + "\"");
+            log.info("UPDATE User OK: id={}", id);
+            return resource;
+        } catch (ResourceException e) {
+            throw e;
+        } catch (Exception e) {
+            long kalltid = System.currentTimeMillis() - startTid;
+            log.error("UPDATE User FEIL: id={}", id, e);
+            kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id, 500, kalltid,
+                    null, errorJson(500, e.getMessage()), null);
+            throw new ResourceException(500, "Intern feil: " + e.getMessage());
+        }
     }
 
     @Override
     public ScimUser patch(String id, String version, List<PatchOperation> patchOperations,
                           Set<AttributeReference> includedAttributes,
                           Set<AttributeReference> excludedAttributes) throws ResourceException {
+        long startTid = System.currentTimeMillis();
+        long kalltid = System.currentTimeMillis() - startTid;
+        kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id, 501, kalltid,
+                null, errorJson(501, "PATCH ikke støttet"), null);
         throw new ResourceException(501, "PATCH er ikke støttet for Users");
     }
 
@@ -169,16 +195,23 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     public void delete(String id) throws ResourceException {
         log.info("DELETE User: id={}", id);
         long startTid = System.currentTimeMillis();
-
-        String deleteJson = String.format("{\"id\":\"%s\"}", id);
-        PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.SLETTE, deleteJson);
-        long kalltid = System.currentTimeMillis() - startTid;
-
-        kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id,
-                result.getMessageNumber(), kalltid, deleteJson, result.getData(), result.getMessage());
-
-        checkResult(result, "DELETE", id);
-        log.info("DELETE User OK: id={}", id);
+        try {
+            String deleteJson = String.format("{\"id\":\"%s\"}", id);
+            PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.SLETTE, deleteJson);
+            long kalltid = System.currentTimeMillis() - startTid;
+            int httpStatus = result.getMessageNumber() < 0 ? 500 : 204;
+            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id, httpStatus, kalltid, deleteJson, result.getData(), result.getMessage());
+            checkResult(result, "DELETE", id);
+            log.info("DELETE User OK: id={}", id);
+        } catch (ResourceException e) {
+            throw e;
+        } catch (Exception e) {
+            long kalltid = System.currentTimeMillis() - startTid;
+            log.error("DELETE User FEIL: id={}", id, e);
+            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id, 500, kalltid,
+                    null, errorJson(500, e.getMessage()), null);
+            throw new ResourceException(500, "Intern feil: " + e.getMessage());
+        }
     }
 
     /**
@@ -209,5 +242,11 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
             log.warn("Kunne ikke serialisere til JSON", e);
             return null;
         }
+    }
+
+    private String errorJson(int status, String detail) {
+        return String.format(
+            "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"%d\",\"detail\":\"%s\"}",
+            status, detail != null ? detail.replace("\"", "'") : "Ukjent feil");
     }
 }

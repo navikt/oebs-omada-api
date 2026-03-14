@@ -43,41 +43,50 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     public ScimGroup get(String id) throws ResourceException {
         log.debug("GET Group: id={}", id);
         long startTid = System.currentTimeMillis();
-
-        Optional<ScimGroup> group = groupService.getGroup(id);
-
-        long kalltid = System.currentTimeMillis() - startTid;
-        if (group.isEmpty()) {
-            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 404, kalltid, null, "Group not found");
-            return null;
+        try {
+            Optional<ScimGroup> group = groupService.getGroup(id);
+            long kalltid = System.currentTimeMillis() - startTid;
+            if (group.isEmpty()) {
+                kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 404, kalltid, null, "Group not found");
+                return null;
+            }
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 200, kalltid, null, null);
+            return group.get();
+        } catch (Exception e) {
+            long kalltid = System.currentTimeMillis() - startTid;
+            log.error("GET Group FEIL: id={}", id, e);
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 500, kalltid,
+                    errorJson(500, e.getMessage()), null);
+            throw new ResourceException(500, "Intern feil: " + e.getMessage());
         }
-
-        kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 200, kalltid, null, null);
-        return group.get();
     }
 
     @Override
     @SuppressWarnings("NullableProblems")
     public FilterResponse<ScimGroup> find(Filter filter, PageRequest pageRequest, SortRequest sortRequest) {
-        int startIndex = pageRequest != null && pageRequest.getStartIndex() != null
-                ? pageRequest.getStartIndex() : 1;
-        int count = pageRequest != null && pageRequest.getCount() != null
-                ? pageRequest.getCount() : 100;
-
+        int startIndex = pageRequest != null && pageRequest.getStartIndex() != null ? pageRequest.getStartIndex() : 1;
+        int count      = pageRequest != null && pageRequest.getCount()      != null ? pageRequest.getCount()      : 100;
         log.debug("LIST Groups: startIndex={}, count={}", startIndex, count);
         long startTid = System.currentTimeMillis();
-
-        Page<ScimGroup> groupPage = groupService.getGroups(startIndex, count);
-
-        long kalltid = System.currentTimeMillis() - startTid;
-        kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups", 200, kalltid, null,
-                "totalResults=" + groupPage.getTotalElements());
-
-        return new FilterResponse<>(groupPage.getContent(), pageRequest, (int) groupPage.getTotalElements());
+        try {
+            Page<ScimGroup> groupPage = groupService.getGroups(startIndex, count);
+            long kalltid = System.currentTimeMillis() - startTid;
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups", 200, kalltid, null,
+                    "totalResults=" + groupPage.getTotalElements());
+            return new FilterResponse<>(groupPage.getContent(), pageRequest, (int) groupPage.getTotalElements());
+        } catch (Exception e) {
+            long kalltid = System.currentTimeMillis() - startTid;
+            log.error("LIST Groups FEIL", e);
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups", 500, kalltid,
+                    errorJson(500, e.getMessage()), null);
+            throw new RuntimeException("Intern feil: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public ScimGroup create(ScimGroup resource) {
+        kallLoggHelper.loggInn(KallLogg.METHOD_POST, "/scim/v2/Groups", 405, 0,
+                errorJson(405, "Groups er read-only — POST ikke støttet"), null);
         throw new UnsupportedOperationException("Groups er read-only — POST ikke støttet");
     }
 
@@ -85,6 +94,8 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     public ScimGroup update(String id, String version, ScimGroup resource,
                             Set<AttributeReference> includedAttributes,
                             Set<AttributeReference> excludedAttributes) {
+        kallLoggHelper.loggInn(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id, 405, 0,
+                errorJson(405, "Groups er read-only — PUT ikke støttet"), null);
         throw new UnsupportedOperationException("Groups er read-only — PUT ikke støttet");
     }
 
@@ -92,12 +103,22 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     public ScimGroup patch(String id, String version, List<PatchOperation> patchOperations,
                            Set<AttributeReference> includedAttributes,
                            Set<AttributeReference> excludedAttributes) {
+        kallLoggHelper.loggInn(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id, 405, 0,
+                errorJson(405, "Groups er read-only — PATCH ikke støttet"), null);
         throw new UnsupportedOperationException("Groups er read-only — PATCH ikke støttet");
     }
 
     @Override
     public void delete(String id) {
+        kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id, 405, 0,
+                errorJson(405, "Groups er read-only — DELETE ikke støttet"), null);
         throw new UnsupportedOperationException("Groups er read-only — DELETE ikke støttet");
+    }
+
+    private String errorJson(int status, String detail) {
+        return String.format(
+            "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"%d\",\"detail\":\"%s\"}",
+            status, detail != null ? detail.replace("\"", "'") : "Ukjent feil");
     }
 }
 

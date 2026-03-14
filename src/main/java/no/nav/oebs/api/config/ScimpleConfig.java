@@ -3,7 +3,9 @@ package no.nav.oebs.api.config;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
+import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
 import no.nav.security.token.support.jaxrs.JwtTokenContainerRequestFilter;
+import no.nav.security.token.support.jaxrs.servlet.JaxrsJwtTokenValidationFilter;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
 import org.apache.directory.scim.core.repository.PatchHandler;
 import org.apache.directory.scim.core.repository.Repository;
@@ -24,6 +26,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 
@@ -147,6 +150,18 @@ public class ScimpleConfig {
         registration.setLoadOnStartup(1);
         registration.setOrder(1);
         registration.setAsyncSupported(true);
+        return registration;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FilterRegistrationBean<JaxrsJwtTokenValidationFilter> jaxrsJwtTokenValidationFilterRegistration(
+            MultiIssuerConfiguration multiIssuerConfiguration) {
+        FilterRegistrationBean<JaxrsJwtTokenValidationFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new JaxrsJwtTokenValidationFilter(multiIssuerConfiguration));
+        registration.addUrlPatterns("/scim/v2/*");
+        registration.setName("JaxrsJwtTokenValidationFilter");
+        registration.setOrder(0);
         return registration;
     }
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import no.nav.oebs.api.scim.service.ScimGroupService;
+import no.nav.security.token.support.core.api.Protected;
 import no.nav.security.token.support.core.api.Unprotected;
 import org.apache.directory.scim.core.repository.Repository;
 import org.apache.directory.scim.spec.exception.ResourceException;
@@ -25,10 +26,9 @@ import java.util.Set;
 /**
  * SCIMple Repository<ScimGroup> — read-only.
  * Registreres automatisk i SCIMples RepositoryRegistry via Spring autoconfiguration.
- * Alle Group-endepunkter er åpne uten token (@Unprotected).
+ * GET/find krever token (@Protected), create/update/patch/delete er åpne (@Unprotected).
  */
 @Slf4j
-@Unprotected
 @Component
 @RequiredArgsConstructor
 public class ScimGroupResourceProvider implements Repository<ScimGroup> {
@@ -42,6 +42,7 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     }
 
     @Override
+    @Protected
     public ScimGroup get(String id) throws ResourceException {
         log.debug("GET Group: id={}", id);
         long startTid = System.currentTimeMillis();
@@ -59,6 +60,7 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     }
 
     @Override
+    @Protected
     @SuppressWarnings("NullableProblems")
     public FilterResponse<ScimGroup> find(Filter filter, PageRequest pageRequest, SortRequest sortRequest) {
         int startIndex = pageRequest != null && pageRequest.getStartIndex() != null
@@ -79,11 +81,13 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     }
 
     @Override
+    @Unprotected
     public ScimGroup create(ScimGroup resource) {
         throw new UnsupportedOperationException("Groups er read-only — POST ikke støttet");
     }
 
     @Override
+    @Unprotected
     public ScimGroup update(String id, String version, ScimGroup resource,
                             Set<AttributeReference> includedAttributes,
                             Set<AttributeReference> excludedAttributes) {
@@ -91,6 +95,7 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     }
 
     @Override
+    @Unprotected
     public ScimGroup patch(String id, String version, List<PatchOperation> patchOperations,
                            Set<AttributeReference> includedAttributes,
                            Set<AttributeReference> excludedAttributes) {
@@ -98,6 +103,7 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     }
 
     @Override
+    @Unprotected
     public void delete(String id) {
         throw new UnsupportedOperationException("Groups er read-only — DELETE ikke støttet");
     }

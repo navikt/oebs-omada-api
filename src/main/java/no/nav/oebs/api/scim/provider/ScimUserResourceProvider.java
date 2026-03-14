@@ -14,6 +14,7 @@ import no.nav.oebs.api.scim.extension.NavOebsExtension;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import no.nav.oebs.api.scim.service.ScimUserService;
 import no.nav.security.token.support.core.api.Protected;
+import no.nav.security.token.support.core.api.Unprotected;
 import org.apache.directory.scim.core.repository.Repository;
 import org.apache.directory.scim.spec.exception.ResourceException;
 import org.apache.directory.scim.spec.filter.Filter;
@@ -39,7 +40,6 @@ import java.util.Set;
  * Alle endepunkter krever gyldig Azure AD-token (@Protected).
  */
 @Slf4j
-@Protected
 @Component
 @RequiredArgsConstructor
 public class ScimUserResourceProvider implements Repository<ScimUser> {
@@ -57,16 +57,19 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
             .build();
 
     @Override
+    @Unprotected
     public Class<ScimUser> getResourceClass() {
         return ScimUser.class;
     }
 
     @Override
+    @Unprotected
     public List<Class<? extends ScimExtension>> getExtensionList() {
         return List.of(NavOebsExtension.class);
     }
 
     @Override
+    @Unprotected
     public ScimUser get(String id) throws ResourceException {
         log.debug("GET User: id={}", id);
         long startTid = System.currentTimeMillis();
@@ -86,6 +89,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
 
     @Override
     @SuppressWarnings("NullableProblems")
+    @Protected
     public FilterResponse<ScimUser> find(Filter filter, PageRequest pageRequest, SortRequest sortRequest) {
         int startIndex = pageRequest != null && pageRequest.getStartIndex() != null
                 ? pageRequest.getStartIndex() : 1;
@@ -105,6 +109,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     }
 
     @Override
+    @Protected
     public ScimUser create(ScimUser resource) throws ResourceException {
         log.info("CREATE User: userName={}, id={}", resource.getUserName(), resource.getId());
         long startTid = System.currentTimeMillis();
@@ -133,6 +138,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     }
 
     @Override
+    @Protected
     public ScimUser update(String id, String version, ScimUser resource,
                            Set<AttributeReference> includedAttributes,
                            Set<AttributeReference> excludedAttributes) throws ResourceException {
@@ -161,6 +167,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     }
 
     @Override
+    @Protected
     public ScimUser patch(String id, String version, List<PatchOperation> patchOperations,
                           Set<AttributeReference> includedAttributes,
                           Set<AttributeReference> excludedAttributes) throws ResourceException {
@@ -168,6 +175,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     }
 
     @Override
+    @Protected
     public void delete(String id) throws ResourceException {
         log.info("DELETE User: id={}", id);
         long startTid = System.currentTimeMillis();

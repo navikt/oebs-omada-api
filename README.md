@@ -156,18 +156,18 @@ curl http://localhost:8080/scim/v2/Schemas
 
 Base URL lokalt: `http://localhost:8080/scim/v2`
 
-| Metode | Endepunkt | Beskrivelse |
-|---|---|---|
-| `GET` | `/Users` | List alle aktive brukere (paginert) |
-| `GET` | `/Users/{id}` | Hent bruker på navId (f.eks. `S108633`) |
-| `POST` | `/Users` | Opprett bruker i OeBS |
-| `PUT` | `/Users/{id}` | Oppdater bruker i OeBS |
-| `DELETE` | `/Users/{id}` | Slett bruker i OeBS |
-| `GET` | `/Groups` | List alle grupper (paginert) |
-| `GET` | `/Groups/{id}` | Hent gruppe med medlemmer |
-| `GET` | `/Schemas` | SCIM-skjemadefinisjon |
-| `GET` | `/ResourceTypes` | SCIM resource types |
-| `GET` | `/ServiceProviderConfig` | SCIM server capabilities |
+| Metode | Endepunkt | Beskrivelse                             |
+|---|---|-----------------------------------------|
+| `GET` | `/Users` | List alle aktive brukere (paginert)     |
+| `GET` | `/Users/{id}` | Hent bruker på navId (f.eks. `A123456`) |
+| `POST` | `/Users` | Opprett bruker i OeBS                   |
+| `PUT` | `/Users/{id}` | Oppdater bruker i OeBS                  |
+| `DELETE` | `/Users/{id}` | Slett bruker i OeBS                     |
+| `GET` | `/Groups` | List alle grupper (paginert)            |
+| `GET` | `/Groups/{id}` | Hent gruppe med medlemmer               |
+| `GET` | `/Schemas` | SCIM-skjemadefinisjon                   |
+| `GET` | `/ResourceTypes` | SCIM resource types                     |
+| `GET` | `/ServiceProviderConfig` | SCIM server capabilities                |
 
 Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 

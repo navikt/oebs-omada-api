@@ -64,6 +64,10 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
      *   GET /{id}                    → @Unprotected  (oppslag på enkelt bruker)
      *   GET (liste)                  → @Protected
      *   POST / PUT / PATCH / DELETE  → @Protected
+     * Metadata (alltid @Unprotected):
+     *   GET /Schemas
+     *   GET /ResourceTypes
+     *   GET /ServiceProviderConfig
      */
     private boolean isUnprotected(String method, String path) {
         boolean isGroupsPath  = path.startsWith("Groups")  || path.startsWith("/Groups");
@@ -73,10 +77,16 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         boolean isGet         = method.equals("GET");
 
         // Users GET /{id} — path inneholder et ikke-tomt segment etter "Users/"
-        boolean isUsersById   = isUsersPath && isGet
-                             && !path.replaceFirst("^/?Users/?", "").isBlank();
+        boolean isUsersById = isUsersPath && isGet
+                           && !path.replaceFirst("^/?Users/?", "").isBlank();
 
-        return (isGroupsPath && isWriteMethod) || isUsersById;
+        // SCIM metadata-endepunkter er alltid åpne
+        boolean isMetadata = isGet && (
+                path.startsWith("Schemas")               || path.startsWith("/Schemas") ||
+                path.startsWith("ResourceTypes")         || path.startsWith("/ResourceTypes") ||
+                path.startsWith("ServiceProviderConfig") || path.startsWith("/ServiceProviderConfig"));
+
+        return (isGroupsPath && isWriteMethod) || isUsersById || isMetadata;
     }
 }
 

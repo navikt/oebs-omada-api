@@ -98,7 +98,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
             Page<ScimUser> userPage = userService.getUsers(startIndex, count);
             long kalltid = System.currentTimeMillis() - startTid;
             kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Users", 200, kalltid, null,
-                    "totalResults=" + userPage.getTotalElements());
+                    "totalResults=" + userPage.getTotalElements() + " returnert=" + userPage.getNumberOfElements());
             return new FilterResponse<>(userPage.getContent(), pageRequest, (int) userPage.getTotalElements());
         } catch (Exception e) {
             long kalltid = System.currentTimeMillis() - startTid;

@@ -72,7 +72,7 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
             Page<ScimGroup> groupPage = groupService.getGroups(startIndex, count);
             long kalltid = System.currentTimeMillis() - startTid;
             kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups", 200, kalltid, null,
-                    "totalResults=" + groupPage.getTotalElements());
+                    "totalResults=" + groupPage.getTotalElements() + " returnert=" + groupPage.getNumberOfElements());
             return new FilterResponse<>(groupPage.getContent(), pageRequest, (int) groupPage.getTotalElements());
         } catch (Exception e) {
             long kalltid = System.currentTimeMillis() - startTid;
@@ -84,35 +84,35 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     }
 
     @Override
-    public ScimGroup create(ScimGroup resource) {
+    public ScimGroup create(ScimGroup resource) throws ResourceException {
         kallLoggHelper.loggInn(KallLogg.METHOD_POST, "/scim/v2/Groups", 405, 0,
                 errorJson(405, "Groups er read-only — POST ikke støttet"), null);
-        throw new UnsupportedOperationException("Groups er read-only — POST ikke støttet");
+        throw new ResourceException(405, "Groups er read-only — POST ikke støttet");
     }
 
     @Override
     public ScimGroup update(String id, String version, ScimGroup resource,
                             Set<AttributeReference> includedAttributes,
-                            Set<AttributeReference> excludedAttributes) {
+                            Set<AttributeReference> excludedAttributes) throws ResourceException {
         kallLoggHelper.loggInn(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id, 405, 0,
                 errorJson(405, "Groups er read-only — PUT ikke støttet"), null);
-        throw new UnsupportedOperationException("Groups er read-only — PUT ikke støttet");
+        throw new ResourceException(405, "Groups er read-only — PUT ikke støttet");
     }
 
     @Override
     public ScimGroup patch(String id, String version, List<PatchOperation> patchOperations,
                            Set<AttributeReference> includedAttributes,
-                           Set<AttributeReference> excludedAttributes) {
+                           Set<AttributeReference> excludedAttributes) throws ResourceException {
         kallLoggHelper.loggInn(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id, 405, 0,
                 errorJson(405, "Groups er read-only — PATCH ikke støttet"), null);
-        throw new UnsupportedOperationException("Groups er read-only — PATCH ikke støttet");
+        throw new ResourceException(405, "Groups er read-only — PATCH ikke støttet");
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(String id) throws ResourceException {
         kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id, 405, 0,
                 errorJson(405, "Groups er read-only — DELETE ikke støttet"), null);
-        throw new UnsupportedOperationException("Groups er read-only — DELETE ikke støttet");
+        throw new ResourceException(405, "Groups er read-only — DELETE ikke støttet");
     }
 
     private String errorJson(int status, String detail) {

@@ -107,12 +107,8 @@ Valgfrie variabler (har defaults lokalt):
 Lag en `.env`-fil i prosjektets rotmappe — denne er i `.gitignore` og skal **aldri** committes:
 
 ```bash
-cat > .env << 'EOF'
-APPS_USER=OMADA_API
-APPS_PASSWORD=<passord>
-DB_URL=<db-url>
-PLSQL_ORG_ID=<org_id>
-EOF
+cp .env.example .env
+# Rediger .env og fyll inn verdiene
 ```
 
 Kjør med `.env`-filen:

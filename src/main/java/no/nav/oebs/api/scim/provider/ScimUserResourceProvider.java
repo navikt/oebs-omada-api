@@ -13,6 +13,7 @@ import no.nav.oebs.api.db.repository.PlsqlProcedureResult;
 import no.nav.oebs.api.scim.extension.NavOebsExtension;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import no.nav.oebs.api.scim.service.ScimUserService;
+import no.nav.security.token.support.core.api.Protected;
 import org.apache.directory.scim.core.repository.Repository;
 import org.apache.directory.scim.spec.exception.ResourceException;
 import org.apache.directory.scim.spec.filter.Filter;
@@ -35,8 +36,10 @@ import java.util.Set;
 /**
  * SCIMple Repository<ScimUser> — implementerer alle SCIM User-operasjoner.
  * Registreres automatisk i SCIMples RepositoryRegistry via Spring autoconfiguration.
+ * Alle endepunkter krever gyldig Azure AD-token (@Protected).
  */
 @Slf4j
+@Protected
 @Component
 @RequiredArgsConstructor
 public class ScimUserResourceProvider implements Repository<ScimUser> {

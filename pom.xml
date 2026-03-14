@@ -202,6 +202,12 @@
             <version>${token-validation.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>no.nav.security</groupId>
+            <artifactId>token-validation-jaxrs</artifactId>
+            <version>${token-validation.version}</version>
+        </dependency>
+
 
         <!-- Kreves av NAV token-validation -->
         <dependency>

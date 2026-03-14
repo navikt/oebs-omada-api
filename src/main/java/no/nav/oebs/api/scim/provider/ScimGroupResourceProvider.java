@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import no.nav.oebs.api.scim.service.ScimGroupService;
+import no.nav.security.token.support.core.api.Unprotected;
 import org.apache.directory.scim.core.repository.Repository;
 import org.apache.directory.scim.spec.exception.ResourceException;
 import org.apache.directory.scim.spec.filter.Filter;
@@ -24,8 +25,10 @@ import java.util.Set;
 /**
  * SCIMple Repository<ScimGroup> — read-only.
  * Registreres automatisk i SCIMples RepositoryRegistry via Spring autoconfiguration.
+ * Alle Group-endepunkter er åpne uten token (@Unprotected).
  */
 @Slf4j
+@Unprotected
 @Component
 @RequiredArgsConstructor
 public class ScimGroupResourceProvider implements Repository<ScimGroup> {

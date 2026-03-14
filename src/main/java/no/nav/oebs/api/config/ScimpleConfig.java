@@ -3,6 +3,7 @@ package no.nav.oebs.api.config;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
+import no.nav.security.token.support.jaxrs.JwtTokenContainerRequestFilter;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
 import org.apache.directory.scim.core.repository.PatchHandler;
 import org.apache.directory.scim.core.repository.Repository;
@@ -115,6 +116,9 @@ public class ScimpleConfig {
                 return ScimResourceHelper.scimpleFeatureAndResourceClasses();
             }
         });
+
+        // Registrer JWT-filter for @Protected / @Unprotected på SCIMple-endepunkter
+        config.register(JwtTokenContainerRequestFilter.class);
 
         config.register(new AbstractBinder() {
             @Override

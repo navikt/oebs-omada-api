@@ -57,36 +57,18 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
 
     /**
      * Returnerer true hvis kallet er åpent uten token.
-     * Groups:
-     *   POST / PUT / PATCH / DELETE  → @Unprotected  (Omada skriver grupper til oss)
-     *   GET                          → @Protected
-     * Users:
-     *   GET /{id}                    → @Unprotected  (oppslag på enkelt bruker)
-     *   GET (liste)                  → @Protected
-     *   POST / PUT / PATCH / DELETE  → @Protected
-     * Metadata (alltid @Unprotected):
+     * Kun SCIM metadata-endepunkter er åpne:
      *   GET /Schemas
      *   GET /ResourceTypes
      *   GET /ServiceProviderConfig
+     * Alt annet (Users og Groups alle metoder) krever gyldig token.
      */
     private boolean isUnprotected(String method, String path) {
-        boolean isGroupsPath  = path.startsWith("Groups")  || path.startsWith("/Groups");
-        boolean isUsersPath   = path.startsWith("Users")   || path.startsWith("/Users");
-        boolean isWriteMethod = method.equals("POST") || method.equals("PUT")
-                             || method.equals("PATCH") || method.equals("DELETE");
-        boolean isGet         = method.equals("GET");
-
-        // Users GET /{id} — path inneholder et ikke-tomt segment etter "Users/"
-        boolean isUsersById = isUsersPath && isGet
-                           && !path.replaceFirst("^/?Users/?", "").isBlank();
-
-        // SCIM metadata-endepunkter er alltid åpne
-        boolean isMetadata = isGet && (
+        boolean isGet = method.equals("GET");
+        return isGet && (
                 path.startsWith("Schemas")               || path.startsWith("/Schemas") ||
                 path.startsWith("ResourceTypes")         || path.startsWith("/ResourceTypes") ||
                 path.startsWith("ServiceProviderConfig") || path.startsWith("/ServiceProviderConfig"));
-
-        return (isGroupsPath && isWriteMethod) || isUsersById || isMetadata;
     }
 }
 

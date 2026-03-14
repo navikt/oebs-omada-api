@@ -163,9 +163,9 @@ public class ScimpleConfig {
             MultiIssuerConfiguration multiIssuerConfiguration) {
         FilterRegistrationBean registration = new FilterRegistrationBean();
         registration.setFilter(new JaxrsJwtTokenValidationFilter(multiIssuerConfiguration));
-        registration.addUrlPatterns("/scim/v2/*");
+        registration.addServletNames("ScimpleServlet");
         registration.setName("JaxrsJwtTokenValidationFilter");
-        registration.setOrder(0);
+        registration.setOrder(-1);
         return registration;
     }
 }

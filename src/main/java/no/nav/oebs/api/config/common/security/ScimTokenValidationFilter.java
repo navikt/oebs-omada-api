@@ -48,13 +48,14 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         String rawAuthHeader = requestContext.getHeaderString("Authorization");
         String authHeader = rawAuthHeader != null ? rawAuthHeader.trim() : null;
 
-        log.info("ScimTokenValidationFilter: råverdi Authorization-header for {} {}: [{}]",
-                method, path, authHeader);
+        log.debug("ScimTokenValidationFilter: validerer {} {} — Authorization: {}",
+                method, path, authHeader == null ? "MANGLER" : "present");
 
         // Avvis kall som mangler Bearer-prefix — klienten må sende korrekt format
         if (authHeader == null || !authHeader.toLowerCase().startsWith("bearer ")) {
-            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} — Authorization-header mangler eller har ugyldig format: [{}]",
-                    method, path, authHeader);
+            String aud = extractAudFromJwt(authHeader);
+            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} — Authorization-header mangler eller har ugyldig format. aud=[{}]",
+                    method, path, aud);
             ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
             kallLoggHelper.loggInn(method, "/scim/v2/" + path,
                     401, 0, null, errorResponse.getDetail());
@@ -73,12 +74,36 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
                 tokenContext.getIssuers(), hasValidToken);
 
         if (!hasValidToken) {
-            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [issuers={}]",
-                    method, path, tokenContext.getIssuers());
+            String aud = extractAudFromJwt(authHeader);
+            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [issuers={}, aud={}]",
+                    method, path, tokenContext.getIssuers(), aud);
             ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
             kallLoggHelper.loggInn(method, "/scim/v2/" + path,
                     401, 0, null, errorResponse.getDetail());
             requestContext.abortWith(ErrorResponse.toResponse(errorResponse));
+        }
+    }
+
+    /**
+     * Trekker ut 'aud'-claim fra JWT payload (base64) for diagnostikk — uten ekstern JWT-parser.
+     */
+    private String extractAudFromJwt(String authHeader) {
+        try {
+            if (authHeader == null) return "null";
+            String token = authHeader.toLowerCase().startsWith("bearer ")
+                    ? authHeader.substring(7).trim()
+                    : authHeader.trim();
+            // Fjern eventuell URL-encoding på slutten (f.eks. trailing %)
+            token = token.replaceAll("[^A-Za-z0-9+/=._~-]", "");
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) return "ugyldig-format";
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(
+                    parts[1].length() % 4 == 0 ? parts[1] : parts[1] + "=".repeat(4 - parts[1].length() % 4)));
+            // Enkel regex-extract av aud-claim
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"aud\"\\s*:\\s*[\"\\[]([^\"]*)").matcher(payload);
+            return m.find() ? m.group(1) : "ikke-funnet";
+        } catch (Exception e) {
+            return "feil-ved-parsing: " + e.getMessage();
         }
     }
 

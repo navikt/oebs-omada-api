@@ -4,7 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
-import no.nav.security.token.support.jaxrs.servlet.JaxrsJwtTokenValidationFilter;
+import no.nav.security.token.support.core.validation.JwtTokenValidationHandler;
 import no.nav.oebs.api.config.common.security.ScimTokenValidationFilter;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
@@ -27,7 +27,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 
@@ -113,7 +112,10 @@ public class ScimpleConfig {
             RepositoryRegistry repositoryRegistry,
             ServerConfiguration serverConfiguration,
             EtagGenerator etagGenerator,
-            KallLoggHelper kallLoggHelper) {
+            KallLoggHelper kallLoggHelper,
+            MultiIssuerConfiguration multiIssuerConfiguration) {
+
+        JwtTokenValidationHandler validationHandler = new JwtTokenValidationHandler(multiIssuerConfiguration);
 
         ResourceConfig config = ResourceConfig.forApplication(new jakarta.ws.rs.core.Application() {
             @Override
@@ -122,7 +124,6 @@ public class ScimpleConfig {
             }
         });
 
-        // Registrer custom token-valideringsfilter for @Protected / @Unprotected per metode/path
         config.register(ScimTokenValidationFilter.class);
 
         config.register(new AbstractBinder() {
@@ -135,6 +136,7 @@ public class ScimpleConfig {
                 bind(serverConfiguration).to(ServerConfiguration.class);
                 bind(etagGenerator).to(EtagGenerator.class);
                 bind(kallLoggHelper).to(KallLoggHelper.class);
+                bind(validationHandler).to(JwtTokenValidationHandler.class);
             }
         });
 
@@ -153,19 +155,6 @@ public class ScimpleConfig {
         registration.setLoadOnStartup(1);
         registration.setOrder(1);
         registration.setAsyncSupported(true);
-        return registration;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public FilterRegistrationBean jaxrsJwtTokenValidationFilterRegistration(
-            MultiIssuerConfiguration multiIssuerConfiguration) {
-        FilterRegistrationBean registration = new FilterRegistrationBean();
-        registration.setFilter(new JaxrsJwtTokenValidationFilter(multiIssuerConfiguration));
-        registration.addServletNames("ScimpleServlet");
-        registration.setName("JaxrsJwtTokenValidationFilter");
-        registration.setOrder(-1);
         return registration;
     }
 }

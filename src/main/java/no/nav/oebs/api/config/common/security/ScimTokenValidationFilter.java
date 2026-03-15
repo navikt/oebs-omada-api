@@ -6,28 +6,32 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.Provider;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.scim.KallLoggHelper;
-import no.nav.security.token.support.jaxrs.JaxrsTokenValidationContextHolder;
+import no.nav.security.token.support.core.http.HttpRequest;
+import no.nav.security.token.support.core.validation.JwtTokenValidationHandler;
 import org.apache.directory.scim.protocol.data.ErrorResponse;
 
 /**
  * Jersey ContainerRequestFilter som håndhever token-validering per HTTP-metode og path.
- * Logger alle avviste kall (401) til KallLogg.
+ * Validerer JWT-token direkte via JwtTokenValidationHandler — uavhengig av servlet-filter-chain.
  *
- * Endepunkt                             | Metode | Krav
- * --------------------------------------|--------|---------------------
- * GET /Schemas, /ResourceTypes, /SPC    | GET    | @Unprotected
- * Alt annet (Users og Groups)           | alle   | @Protected
+ * Endepunkt                          | Metode | Krav
+ * -----------------------------------|--------|---------------------
+ * GET /Schemas, /ResourceTypes, /SPC | GET    | @Unprotected
+ * Alt annet (Users og Groups)        | alle   | @Protected
  */
 @Slf4j
 @Provider
 public class ScimTokenValidationFilter implements ContainerRequestFilter {
 
     private final KallLoggHelper kallLoggHelper;
+    private final JwtTokenValidationHandler validationHandler;
 
     @Inject
-    @SuppressWarnings("CdiInjectionPointsInspection") // KallLoggHelper bindes via HK2 AbstractBinder i ScimpleConfig
-    public ScimTokenValidationFilter(KallLoggHelper kallLoggHelper) {
+    @SuppressWarnings("CdiInjectionPointsInspection")
+    public ScimTokenValidationFilter(KallLoggHelper kallLoggHelper,
+                                     JwtTokenValidationHandler validationHandler) {
         this.kallLoggHelper = kallLoggHelper;
+        this.validationHandler = validationHandler;
     }
 
     @Override
@@ -40,15 +44,17 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
             return;
         }
 
-        var tokenContext = JaxrsTokenValidationContextHolder.INSTANCE.getTokenValidationContext();
-        //noinspection ConstantConditions — kan returnere null ved manglende token tross Kotlin @NotNull
+        // Les Authorization-header direkte fra JAX-RS request og valider via JwtTokenValidationHandler
+        String authHeader = requestContext.getHeaderString("Authorization");
+        HttpRequest httpRequest = headerName -> "Authorization".equalsIgnoreCase(headerName) ? authHeader : null;
+
+        var tokenContext = validationHandler.getValidatedTokens(httpRequest);
         boolean hasValidToken = tokenContext != null
                 && tokenContext.getIssuers().stream().anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
 
         if (!hasValidToken) {
-            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [context={}, issuers={}]",
+            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [issuers={}]",
                     method, path,
-                    tokenContext == null ? "null" : "present",
                     tokenContext == null ? "-" : tokenContext.getIssuers());
             ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
             kallLoggHelper.loggInn(method, "/scim/v2/" + path,
@@ -58,10 +64,7 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
     }
 
     /**
-     * Returnerer true hvis kallet er åpent uten token.
-     * Kun SCIM metadata-endepunkter er åpne:
-     *   GET /Schemas, GET /ResourceTypes, GET /ServiceProviderConfig
-     * Alt annet krever gyldig token.
+     * Kun SCIM metadata-endepunkter er åpne uten token.
      */
     private boolean isUnprotected(String method, String path) {
         boolean isGet = method.equals("GET");
@@ -71,4 +74,3 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
                 path.startsWith("ServiceProviderConfig") || path.startsWith("/ServiceProviderConfig"));
     }
 }
-

@@ -48,9 +48,18 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         String authHeader = requestContext.getHeaderString("Authorization");
         HttpRequest httpRequest = headerName -> "Authorization".equalsIgnoreCase(headerName) ? authHeader : null;
 
+        log.info("ScimTokenValidationFilter: validerer {} {} — Authorization: {}",
+                method, path,
+                authHeader == null ? "MANGLER" : authHeader.substring(0, Math.min(authHeader.length(), 30)) + "...");
+
         var tokenContext = validationHandler.getValidatedTokens(httpRequest);
         boolean hasValidToken = tokenContext != null
                 && tokenContext.getIssuers().stream().anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
+
+        log.info("ScimTokenValidationFilter: tokenContext={} issuers={} hasValidToken={}",
+                tokenContext == null ? "null" : "present",
+                tokenContext == null ? "-" : tokenContext.getIssuers(),
+                hasValidToken);
 
         if (!hasValidToken) {
             log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [issuers={}]",

@@ -45,26 +45,36 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         }
 
         // Les Authorization-header direkte fra JAX-RS request og valider via JwtTokenValidationHandler
-        String authHeader = requestContext.getHeaderString("Authorization");
+        String rawAuthHeader = requestContext.getHeaderString("Authorization");
+        String authHeader = rawAuthHeader != null ? rawAuthHeader.trim() : null;
+
+        log.info("ScimTokenValidationFilter: råverdi Authorization-header for {} {}: [{}]",
+                method, path, authHeader);
+
+        // Avvis kall som mangler Bearer-prefix — klienten må sende korrekt format
+        if (authHeader == null || !authHeader.toLowerCase().startsWith("bearer ")) {
+            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} — Authorization-header mangler eller har ugyldig format: [{}]",
+                    method, path, authHeader);
+            ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
+            kallLoggHelper.loggInn(method, "/scim/v2/" + path,
+                    401, 0, null, errorResponse.getDetail());
+            requestContext.abortWith(ErrorResponse.toResponse(errorResponse));
+            return;
+        }
+
         HttpRequest httpRequest = headerName -> "Authorization".equalsIgnoreCase(headerName) ? authHeader : null;
 
-        log.info("ScimTokenValidationFilter: validerer {} {} — Authorization: {}",
-                method, path,
-                authHeader == null ? "MANGLER" : authHeader.substring(0, Math.min(authHeader.length(), 30)) + "...");
 
         var tokenContext = validationHandler.getValidatedTokens(httpRequest);
-        boolean hasValidToken = tokenContext != null
-                && tokenContext.getIssuers().stream().anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
+        boolean hasValidToken = tokenContext.getIssuers().stream()
+                .anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
 
-        log.info("ScimTokenValidationFilter: tokenContext={} issuers={} hasValidToken={}",
-                tokenContext == null ? "null" : "present",
-                tokenContext == null ? "-" : tokenContext.getIssuers(),
-                hasValidToken);
+        log.info("ScimTokenValidationFilter: tokenContext issuers={} hasValidToken={}",
+                tokenContext.getIssuers(), hasValidToken);
 
         if (!hasValidToken) {
             log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [issuers={}]",
-                    method, path,
-                    tokenContext == null ? "-" : tokenContext.getIssuers());
+                    method, path, tokenContext.getIssuers());
             ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
             kallLoggHelper.loggInn(method, "/scim/v2/" + path,
                     401, 0, null, errorResponse.getDetail());

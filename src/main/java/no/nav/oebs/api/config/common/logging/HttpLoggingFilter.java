@@ -10,11 +10,11 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotNull;
 
 import no.nav.oebs.api.config.common.mdc.MdcOperations;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.db.repository.KallLoggRepository;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -36,17 +36,12 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 	}
 
 	@Override
-	protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
+	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
 			throws ServletException, IOException {
 
 		long startTime = System.currentTimeMillis();
 
-		// Sett korrelasjons-ID — bruk innkommende header hvis tilgjengelig, ellers generer ny
-		String korrelasjonId = request.getHeader("X-Correlation-ID");
-		if (korrelasjonId == null || korrelasjonId.isBlank()) {
-			korrelasjonId = MdcOperations.generateCorrelationId();
-		}
-		MdcOperations.put(MdcOperations.MDC_CORRELATION_ID, korrelasjonId);
+		// Korrelasjons-ID er allerede satt i MDC av CorrelationIdFilter som kjører før dette filteret
 
 		HttpServletRequest requestToUse = request;
 		if (!(request instanceof ContentCachingRequestWrapper)) {

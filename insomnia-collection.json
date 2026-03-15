@@ -1,0 +1,478 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-03-15",
+  "__export_source": "oebs-omada-api",
+  "resources": [
+    {
+      "_id": "wrk_oebs_omada",
+      "_type": "workspace",
+      "name": "oebs-omada-api",
+      "description": "SCIM 2.0 API for oebs-omada-api"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_oebs_omada",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "https://oebs-omada-api-u1.intern.dev.nav.no",
+        "token": ""
+      }
+    },
+    {
+      "_id": "env_local",
+      "_type": "environment",
+      "parentId": "wrk_oebs_omada",
+      "name": "Local",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "token": "local-test-token"
+      }
+    },
+    {
+      "_id": "env_dev",
+      "_type": "environment",
+      "parentId": "wrk_oebs_omada",
+      "name": "Dev (u1)",
+      "data": {
+        "base_url": "https://oebs-omada-api-u1.intern.dev.nav.no",
+        "token": ""
+      }
+    },
+
+    {
+      "_id": "fld_metadata",
+      "_type": "request_group",
+      "parentId": "wrk_oebs_omada",
+      "name": "Metadata (Unprotected)"
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "parentId": "wrk_oebs_omada",
+      "name": "Users (Protected)"
+    },
+    {
+      "_id": "fld_groups",
+      "_type": "request_group",
+      "parentId": "wrk_oebs_omada",
+      "name": "Groups (Protected)"
+    },
+    {
+      "_id": "fld_health",
+      "_type": "request_group",
+      "parentId": "wrk_oebs_omada",
+      "name": "Health"
+    },
+
+    {
+      "_id": "req_schemas",
+      "_type": "request",
+      "parentId": "fld_metadata",
+      "name": "GET Schemas",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Schemas",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Inneholder SCIM User schema",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.Resources).to.be.an('array');\nconst userSchema = body.Resources.find(s => s.id === 'urn:ietf:params:scim:schemas:core:2.0:User');\nexpect(userSchema).to.exist;"
+        },
+        {
+          "name": "Inneholder SCIM Group schema",
+          "code": "const body = JSON.parse(response.body);\nconst groupSchema = body.Resources.find(s => s.id === 'urn:ietf:params:scim:schemas:core:2.0:Group');\nexpect(groupSchema).to.exist;"
+        }
+      ]
+    },
+    {
+      "_id": "req_resource_types",
+      "_type": "request",
+      "parentId": "fld_metadata",
+      "name": "GET ResourceTypes",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/ResourceTypes",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Inneholder User og Group ResourceType",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.Resources).to.be.an('array');\nconst types = body.Resources.map(r => r.name);\nexpect(types).to.include('User');\nexpect(types).to.include('Group');"
+        }
+      ]
+    },
+    {
+      "_id": "req_service_provider_config",
+      "_type": "request",
+      "parentId": "fld_metadata",
+      "name": "GET ServiceProviderConfig",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/ServiceProviderConfig",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Inneholder SCIM schema URI",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig');"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_users_list",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "GET Users (liste)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Users",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Har SCIM ListResponse schema",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:ListResponse');"
+        },
+        {
+          "name": "totalResults er et tall",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.totalResults).to.be.a('number');"
+        },
+        {
+          "name": "Resources er en array",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.Resources).to.be.an('array');"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_list_paged",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "GET Users (paginert)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Users?startIndex=1&count=10",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Maks 10 resultater",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.Resources.length).to.be.at.most(10);"
+        },
+        {
+          "name": "itemsPerPage er satt",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.itemsPerPage).to.be.a('number');"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_get",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "GET User (enkelt)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Users/S108633",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "id er satt",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.id).to.exist;"
+        },
+        {
+          "name": "Har SCIM User schema",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:schemas:core:2.0:User');"
+        },
+        {
+          "name": "Har meta.resourceType = User",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.meta.resourceType).to.equal('User');"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_get_404",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "GET User — 404 ikke funnet",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Users/FINNES_IKKE_12345",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 404",
+          "code": "expect(response.status).to.equal(404);"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_create",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "POST User (opprett)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/scim/v2/Users",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" },
+        { "name": "Content-Type", "value": "application/scim+json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n  \"id\": \"TEST_USER_001\",\n  \"externalId\": \"EXT_001\",\n  \"userName\": \"test.bruker@nav.no\",\n  \"active\": true,\n  \"displayName\": \"Test Bruker\",\n  \"emails\": [\n    {\n      \"value\": \"test.bruker@nav.no\",\n      \"type\": \"work\",\n      \"primary\": true\n    }\n  ]\n}"
+      },
+      "tests": [
+        {
+          "name": "Status er 201 eller 200",
+          "code": "expect([200, 201]).to.include(response.status);"
+        },
+        {
+          "name": "Har SCIM Error schema ved feil",
+          "code": "if (response.status >= 400) {\n  const body = JSON.parse(response.body);\n  expect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');\n  expect(body.status).to.exist;\n  expect(body.detail).to.exist;\n}"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_update",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "PUT User (oppdater)",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/scim/v2/Users/S108633",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" },
+        { "name": "Content-Type", "value": "application/scim+json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n  \"id\": \"S108633\",\n  \"userName\": \"S108633@adeo.no\",\n  \"active\": true,\n  \"displayName\": \"Anja Solli\",\n  \"emails\": [\n    {\n      \"value\": \"S108633@adeo.no\",\n      \"type\": \"work\",\n      \"primary\": true\n    }\n  ]\n}"
+      },
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Har SCIM Error schema ved feil",
+          "code": "if (response.status >= 400) {\n  const body = JSON.parse(response.body);\n  expect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');\n  expect(body.status).to.exist;\n  expect(body.detail).to.exist;\n}"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_delete",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "DELETE User",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/scim/v2/Users/TEST_USER_001",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 204",
+          "code": "expect(response.status).to.equal(204);"
+        },
+        {
+          "name": "Har SCIM Error schema ved feil",
+          "code": "if (response.status >= 400) {\n  const body = JSON.parse(response.body);\n  expect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');\n  expect(body.status).to.exist;\n  expect(body.detail).to.exist;\n}"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_401",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "GET Users — 401 uten token",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Users",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 401",
+          "code": "expect(response.status).to.equal(401);"
+        },
+        {
+          "name": "Har SCIM Error schema",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');"
+        },
+        {
+          "name": "status-felt er '401'",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.status).to.equal('401');"
+        },
+        {
+          "name": "detail er satt",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.detail).to.exist;"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_groups_list",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "GET Groups (liste)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Groups",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Har SCIM ListResponse schema",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:ListResponse');"
+        },
+        {
+          "name": "totalResults er et tall",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.totalResults).to.be.a('number');"
+        }
+      ]
+    },
+    {
+      "_id": "req_groups_list_paged",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "GET Groups (paginert)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Groups?startIndex=1&count=10",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Maks 10 resultater",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.Resources.length).to.be.at.most(10);"
+        }
+      ]
+    },
+    {
+      "_id": "req_groups_get",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "GET Group (enkelt)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Groups/A$10@INNKJØP",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "id er satt",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.id).to.exist;"
+        },
+        {
+          "name": "Har SCIM Group schema",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:schemas:core:2.0:Group');"
+        }
+      ]
+    },
+    {
+      "_id": "req_groups_401",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "GET Groups — 401 uten token",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/Groups",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 401",
+          "code": "expect(response.status).to.equal(401);"
+        },
+        {
+          "name": "Har SCIM Error schema",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');"
+        },
+        {
+          "name": "status-felt er '401'",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.status).to.equal('401');"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_health_alive",
+      "_type": "request",
+      "parentId": "fld_health",
+      "name": "GET isAlive",
+      "method": "GET",
+      "url": "{{ _.base_url }}/internal/isalive",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        }
+      ]
+    },
+    {
+      "_id": "req_health_ready",
+      "_type": "request",
+      "parentId": "fld_health",
+      "name": "GET isReady",
+      "method": "GET",
+      "url": "{{ _.base_url }}/internal/isready",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        }
+      ]
+    },
+    {
+      "_id": "req_actuator_health",
+      "_type": "request",
+      "parentId": "fld_health",
+      "name": "GET Actuator Health",
+      "method": "GET",
+      "url": "{{ _.base_url }}/actuator/health",
+      "headers": [],
+      "tests": [
+        {
+          "name": "Status er 200",
+          "code": "expect(response.status).to.equal(200);"
+        },
+        {
+          "name": "Status er UP",
+          "code": "const body = JSON.parse(response.body);\nexpect(body.status).to.equal('UP');"
+        }
+      ]
+    }
+  ]
+}
+

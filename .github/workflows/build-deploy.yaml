@@ -4,7 +4,6 @@ on:
     branches:
       - 'dev/**'
       - 'main'
-      - 'spring-boot'
 jobs:
   build_and_push:
     permissions:
@@ -49,14 +48,6 @@ jobs:
         env:
           CLUSTER: dev-fss
           RESOURCE: .nais/nais-u1.yaml
-          IMAGE: ${{ steps.docker-push.outputs.image }}
-
-      - name: Deploy to NAIS (spring-boot)
-        if: github.ref == 'refs/heads/spring-boot'
-        uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: dev-fss
-          RESOURCE: .nais/nais-spring-boot.yaml
           IMAGE: ${{ steps.docker-push.outputs.image }}
 
 #      - name: Deploy to NAIS (T1)

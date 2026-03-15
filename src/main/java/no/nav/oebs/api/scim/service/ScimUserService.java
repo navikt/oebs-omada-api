@@ -32,45 +32,22 @@ public class ScimUserService {
     private final ScimUserMapper userMapper;
 
     /**
-     * Hent en bruker basert på SCIM id (navId)
+     * Hent en bruker basert på SCIM id = navId (f.eks. "S108633")
      */
-    public Optional<ScimUser> getUser(String navId) {
-        log.debug("Henter bruker med navId: {}", navId);
+    public Optional<ScimUser> getUser(String id) {
+        log.debug("Henter bruker med navId: {}", id);
 
-        Optional<ScimUserEntity> userEntity = userRepository.findByNavId(navId);
+        Optional<ScimUserEntity> userEntity = userRepository.findByNavId(id);
 
         if (userEntity.isEmpty()) {
-            log.debug("Bruker ikke funnet: {}", navId);
+            log.debug("Bruker ikke funnet for navId: {}", id);
             return Optional.empty();
         }
 
-        String brukerId = userEntity.get().getBrukerId();
-        // Hent gruppe-medlemskap
-        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByBrukerId(brukerId);
-
+        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByBrukerId(userEntity.get().getBrukerId());
         ScimUser scimUser = userMapper.toScimUser(userEntity.get(), groups);
 
-        log.debug("Bruker funnet: navId={} brukerId={} med {} grupper", navId, brukerId, groups.size());
-        return Optional.of(scimUser);
-    }
-
-    /**
-     * Hent bruker basert på SCIM externalId (brukerId)
-     */
-    public Optional<ScimUser> getUserByExternalId(String brukerId) {
-        log.debug("Henter bruker med brukerId: {}", brukerId);
-
-        Optional<ScimUserEntity> userEntity = userRepository.findByBrukerId(brukerId);
-
-        if (userEntity.isEmpty()) {
-            log.debug("Bruker med brukerId {} ikke funnet", brukerId);
-            return Optional.empty();
-        }
-
-        List<ScimGroupMembershipEntity> groups =
-            groupMembershipRepository.findByBrukerId(userEntity.get().getBrukerId());
-
-        ScimUser scimUser = userMapper.toScimUser(userEntity.get(), groups);
+        log.debug("Bruker funnet: navId={}, brukerId={}, grupper={}", id, userEntity.get().getBrukerId(), groups.size());
         return Optional.of(scimUser);
     }
 
@@ -80,13 +57,11 @@ public class ScimUserService {
     public Page<ScimUser> getUsers(int startIndex, int count) {
         log.debug("Henter brukere: startIndex={}, count={}", startIndex, count);
 
-        // SCIM bruker 1-basert indeksering, Spring Data bruker 0-basert
         int pageNumber = (startIndex - 1) / count;
         Pageable pageable = PageRequest.of(pageNumber, count);
 
         Page<ScimUserEntity> userPage = userRepository.findAllActiveUsers(pageable);
 
-        // Konverter til SCIM Users (uten grupper for ytelse)
         Page<ScimUser> scimUserPage = userPage.map(entity ->
             userMapper.toScimUser(entity, List.of())
         );
@@ -95,19 +70,5 @@ public class ScimUserService {
                   scimUserPage.getTotalElements());
 
         return scimUserPage;
-    }
-
-    /**
-     * Tell totalt antall aktive brukere
-     */
-    public long getTotalUsers() {
-        return userRepository.countActiveUsers();
-    }
-
-    /**
-     * Hent alle grupper for en bruker
-     */
-    public List<ScimGroupMembershipEntity> getUserGroups(String userName) {
-        return groupMembershipRepository.findByBrukerId(userName);
     }
 }

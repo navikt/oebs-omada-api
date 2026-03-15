@@ -6,34 +6,37 @@
     <appender name="stdout_json" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
-                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxDepthPerThrowable>50</maxDepthPerThrowable>
                 <exclude>java\.util\.concurrent\..*</exclude>
-                <exclude>org\.apache\.tomcat\..*</exclude>
-                <exclude>org\.apache\.coyote\..*</exclude>
-                <exclude>org\.apache\.catalina\..*</exclude>
                 <exclude>org\.springframework\.web\..*</exclude>
             </throwableConverter>
         </encoder>
     </appender>
 
     <springProfile name="nais">
-        <root>
-            <level value="INFO" />
+        <root level="INFO">
             <appender-ref ref="stdout_json" />
         </root>
-        <!--logger name="com.zaxxer.hikari.pool.HikariPool" level="TRACE"/-->
-        <!--logger name="no.nav.oebs.api" level="DEBUG" /-->
-        <!--logger name="logging.level.org.hibernate" level="DEBUG" /-->
+        <!-- Reduser støy fra tredjepartsbiblioteker -->
+        <logger name="org.glassfish.jersey"             level="WARN" />
+        <logger name="org.glassfish.hk2"                level="WARN" />
+        <logger name="org.hibernate"                    level="WARN" />
+        <logger name="org.eclipse.jetty"                level="WARN" />
+        <logger name="com.zaxxer.hikari"                level="INFO" />
+        <!-- Applikasjonslogging -->
+        <logger name="no.nav.oebs.api"                  level="INFO" />
     </springProfile>
 
     <springProfile name="local">
         <include resource="org/springframework/boot/logging/logback/base.xml" />
-        <root>
-            <level value="INFO" />
+        <root level="INFO">
             <appender-ref ref="CONSOLE" />
         </root>
-        <!-- logger name="com.zaxxer.hikari.pool.HikariPool" level="TRACE"/ -->
-        <!--logger name="no.nav.oebs.api" level="DEBUG" / -->
-        <!--logger name="logging.level.org.hibernate" level="DEBUG" / -->
+        <logger name="org.glassfish.jersey"             level="WARN" />
+        <logger name="org.glassfish.hk2"                level="WARN" />
+        <logger name="org.hibernate"                    level="WARN" />
+        <logger name="org.eclipse.jetty"                level="WARN" />
+        <logger name="com.zaxxer.hikari"                level="INFO" />
+        <logger name="no.nav.oebs.api"                  level="DEBUG" />
     </springProfile>
 </configuration>

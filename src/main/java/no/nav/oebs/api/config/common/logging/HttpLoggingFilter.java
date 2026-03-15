@@ -5,18 +5,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotNull;
 
 import no.nav.oebs.api.config.common.mdc.MdcOperations;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.db.repository.KallLoggRepository;
-//import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -38,17 +36,12 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 	}
 
 	@Override
-	protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
+	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
 			throws ServletException, IOException {
 
 		long startTime = System.currentTimeMillis();
 
-		// Sett korrelasjons-ID — bruk innkommende header hvis tilgjengelig, ellers generer ny
-		String korrelasjonId = request.getHeader("X-Correlation-ID");
-		if (korrelasjonId == null || korrelasjonId.isBlank()) {
-			korrelasjonId = MdcOperations.generateCorrelationId();
-		}
-		MdcOperations.put(MdcOperations.MDC_CORRELATION_ID, korrelasjonId);
+		// Korrelasjons-ID er allerede satt i MDC av CorrelationIdFilter som kjører før dette filteret
 
 		HttpServletRequest requestToUse = request;
 		if (!(request instanceof ContentCachingRequestWrapper)) {
@@ -72,7 +65,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 					.korrelasjonId(MdcOperations.get(MdcOperations.MDC_CORRELATION_ID)) //
 					.tidspunkt(LocalDateTime.now()) //
 					.type(KallLogg.TYPE_REST) //
-					.kallRetning(requestToUse.getMethod().equals("POST") ? KallLogg.RETNING_UT: KallLogg.RETNING_INN) //
+					.kallRetning(KallLogg.RETNING_INN) //
 					.method(requestToUse.getMethod()) //
 					.operation(requestToUse.getRequestURI()) //
 					.status(responseToUse.getStatus()) //
@@ -115,7 +108,12 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 		HttpHeaders headers = new HttpHeaders();
 
 		for (String headerName : Collections.list(request.getHeaderNames())) {
-			headers.addAll(headerName, Collections.list(request.getHeaders(headerName)));
+			List<String> values = Collections.list(request.getHeaders(headerName));
+			if ("authorization".equalsIgnoreCase(headerName)) {
+				headers.add(headerName, "Bearer [MASKERT]");
+			} else {
+				headers.addAll(headerName, values);
+			}
 		}
 		return headers;
 	}

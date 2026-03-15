@@ -3,15 +3,14 @@ package no.nav.oebs.api.db.repository;
 import java.math.BigDecimal;
 import java.sql.Clob;
 import java.sql.Types;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.sql.DataSource;
 
-import no.nav.oebs.api.config.common.mdc.MdcOperations;
 import no.nav.oebs.api.exception.UgyldigInputException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
@@ -22,68 +21,70 @@ import org.springframework.stereotype.Repository;
 
 import lombok.extern.slf4j.Slf4j;
 
-import no.nav.oebs.api.config.common.logging.LoggingUtils;
-import no.nav.oebs.api.db.entity.KallLogg;
-import static no.nav.oebs.api.config.common.mdc.MdcOperations.generateCorrelationId;
-
 
 @Slf4j
 @Repository
 public class PlsqlProcedureRepository {
 
-	// Parameternavn matcher InsertOmadaMessage-signaturen eksakt
-	private static final String ERRBUF_PARAM         = "errbuf";
-	private static final String RETCODE_PARAM        = "retcode";
-	private static final String ORG_ID_PARAM         = "p_org_id";
-	private static final String JSON_MESSAGE_PARAM   = "p_json_message";
-	private static final String OPERASJON_PARAM      = "p_operasjon";
+	// Parameternavn matcher XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage
+	private static final String PARAM_ERRBUF       = "errbuf";
+	private static final String PARAM_RETCODE      = "retcode";
+	private static final String PARAM_ORG_ID       = "p_org_id";
+	private static final String PARAM_JSON_MESSAGE = "p_json_message";
+	private static final String PARAM_OPERASJON    = "p_operasjon";
 
-	private KallLoggRepository kallLoggRepository;
-
-	private JdbcTemplate jdbcTemplate;
-
-	private ConcurrentMap<String, SimpleJdbcCall> jdbcCallCache = new ConcurrentHashMap<>();
-
-	@Autowired
-	public PlsqlProcedureRepository(DataSource dataSource, KallLoggRepository kallLoggRepository) {
-		jdbcTemplate = new JdbcTemplate(dataSource);
-		jdbcTemplate.setResultsMapCaseInsensitive(true);
-
-		this.kallLoggRepository = kallLoggRepository;
+	/** Gyldige operasjonsverdier */
+	public enum Operasjon {
+		NY, ENDRE, SLETTE
 	}
 
-	public PlsqlProcedureResult executeInOutProcedure(String procedureName, String operasjon, Long orgId, String jsonMessage) {
-		long startTime = System.currentTimeMillis();
+	private final JdbcTemplate jdbcTemplate;
+	private final ConcurrentMap<String, SimpleJdbcCall> jdbcCallCache = new ConcurrentHashMap<>();
 
+	@Value("${oebs.plsql.org-id:0}")
+	private long orgId;
+
+	@Autowired
+	public PlsqlProcedureRepository(DataSource dataSource) {
+		this.jdbcTemplate = new JdbcTemplate(dataSource);
+		this.jdbcTemplate.setResultsMapCaseInsensitive(true);
+	}
+
+	public PlsqlProcedureResult executeInOutProcedure(String procedureName, Operasjon operasjon, String dataIn) {
+		long startTime = System.currentTimeMillis();
 		try {
 			validateProcedureName(procedureName);
 
 			SimpleJdbcCall jdbcCall = getJdbcCall(procedureName,
-					new SqlOutParameter(ERRBUF_PARAM,       Types.VARCHAR),
-					new SqlOutParameter(RETCODE_PARAM,      Types.VARCHAR),
-					new SqlParameter(ORG_ID_PARAM,          Types.NUMERIC),
-					new SqlParameter(JSON_MESSAGE_PARAM,    Types.CLOB),
-					new SqlParameter(OPERASJON_PARAM,       Types.VARCHAR));
+					new SqlOutParameter(PARAM_ERRBUF,       Types.VARCHAR),
+					new SqlOutParameter(PARAM_RETCODE,      Types.VARCHAR),
+					new SqlParameter(  PARAM_ORG_ID,        Types.NUMERIC),
+					new SqlParameter(  PARAM_JSON_MESSAGE,  Types.CLOB),
+					new SqlParameter(  PARAM_OPERASJON,     Types.VARCHAR));
 
 			SqlParameterSource inParams = new MapSqlParameterSource()
-					.addValue(ORG_ID_PARAM,       orgId)
-					.addValue(JSON_MESSAGE_PARAM, jsonMessage)
-					.addValue(OPERASJON_PARAM,    operasjon);
+					.addValue(PARAM_ORG_ID,      orgId)
+					.addValue(PARAM_JSON_MESSAGE, dataIn)
+					.addValue(PARAM_OPERASJON,    operasjon.name());
 
-			return executeProcedure(jdbcCall, inParams);
+			PlsqlProcedureResult result = executeProcedure(jdbcCall, inParams);
 
-		} catch (Exception e) {
-			throw e;
+			if (result.getMessageNumber() < 0) {
+				throw new UgyldigInputException("Ingen data funnet");
+			}
+			return result;
+
 		} finally {
-			long endTime = System.currentTimeMillis();
-			// logProcedureCall(procedureName, jsonMessage, result, endTime - startTime, null);
+			log.debug("executeInOutProcedure: procedure={}, operasjon={}, tid={}ms",
+					procedureName, operasjon, System.currentTimeMillis() - startTime);
 		}
 	}
 
 	private void validateProcedureName(String procedureName) {
-		if (procedureName.split("\\.").length != 2) {
+		int parts = procedureName.split("\\.").length;
+		if (parts != 2 && parts != 3) {
 			throw new IllegalArgumentException(
-					"Feil format på PL/SQL-prosedyrenavnet '" + procedureName + "'; skal ha format 'pakkenavn.prosedyrenavn'");
+					"Feil format på PL/SQL-prosedyrenavnet '" + procedureName + "'; skal ha format 'pakkenavn.prosedyrenavn' eller 'schema.pakkenavn.prosedyrenavn'");
 		}
 	}
 
@@ -92,17 +93,26 @@ public class PlsqlProcedureRepository {
 		if (jdbcCall == null) {
 			String[] tokens = procedureName.split("\\.");
 
-			jdbcCall = new SimpleJdbcCall(jdbcTemplate) //
-					.withCatalogName(tokens[0]) //
-					.withProcedureName(tokens[1]) //
-					.withoutProcedureColumnMetaDataAccess() //
+			jdbcCall = new SimpleJdbcCall(jdbcTemplate);
+
+			if (tokens.length == 3) {
+				// Format: SCHEMA.PAKKE.PROSEDYRE — brukes når kalleren ikke eier pakken
+				jdbcCall.withSchemaName(tokens[0])
+						.withCatalogName(tokens[1])
+						.withProcedureName(tokens[2]);
+			} else {
+				// Format: PAKKE.PROSEDYRE
+				jdbcCall.withCatalogName(tokens[0])
+						.withProcedureName(tokens[1]);
+			}
+
+			jdbcCall.withoutProcedureColumnMetaDataAccess()
 					.declareParameters(declaredParameters);
 
 			jdbcCallCache.put(procedureName, jdbcCall);
-
-			log.debug("Oppretter og cacher SimpleJdbcCall-objekt for '" + procedureName + "'");
+			log.debug("Oppretter og cacher SimpleJdbcCall-objekt for '{}'", procedureName);
 		} else {
-			log.debug("Gjenbruker cachet SimpleJdbcCall-objekt for '" + procedureName + "'");
+			log.debug("Gjenbruker cachet SimpleJdbcCall-objekt for '{}'", procedureName);
 		}
 		return jdbcCall;
 	}
@@ -110,48 +120,24 @@ public class PlsqlProcedureRepository {
 	private PlsqlProcedureResult executeProcedure(SimpleJdbcCall jdbcCall, SqlParameterSource inParams) {
 		Map<String, Object> outParams = jdbcCall.execute(inParams);
 
-		String errbuf  = (String) outParams.get(ERRBUF_PARAM);
-		String retcode = (String) outParams.get(RETCODE_PARAM);
+		// errbuf/retcode er Oracle concurrent program-konvensjoner:
+		// retcode: "0" = suksess, "1" = advarsel, "2" = feil
+		// errbuf:  feilmelding ved retcode > 0
+		String errbuf  = (String) outParams.get(PARAM_ERRBUF);
+		String retcode = (String) outParams.get(PARAM_RETCODE);
 
-		return new PlsqlProcedureResult(errbuf, retcode);
-	}
-
-	private void logProcedureCall(String procedureName, String dataIn, PlsqlProcedureResult result, long executionTime,
-			Exception exception) {
-
-		String correlationId = MdcOperations.get(MdcOperations.MDC_CORRELATION_ID);
-
-		if (MdcOperations.get(MdcOperations.MDC_CORRELATION_ID) == null) {
-			KallLogg kallLogg = KallLogg.builder() //
-					.korrelasjonId(generateCorrelationId())
-					// .korrelasjonId(MdcOperations.get(MdcOperations.MDC_CORRELATION_ID)) //
-					.tidspunkt(LocalDateTime.now()) //
-					.type(KallLogg.TYPE_PLSQL) //
-					.kallRetning(KallLogg.RETNING_UT) //
-					.operation(procedureName) //
-					.status(exception != null //
-							? Integer.valueOf(PlsqlMessageCodes.EXCEPTION) //
-							: PlsqlProcedureResult.resolveMessageNumber(result)) //
-					.kalltid(executionTime) //
-					.request(dataIn) //
-					.response(result != null ? result.getData() : null) //
-					.logginfo(exception != null //
-							? LoggingUtils.formatExceptionAsString(exception) //
-							: PlsqlProcedureResult.resolveMessage(result)) //
-					.build();
-
-			log.debug("Correlation ID:  '" + correlationId + "'");
-
-			// if (correlationId == null)  {
-			   saveKallLogg(kallLogg);
+		if (retcode != null && !retcode.equals("0")) {
+			log.warn("InsertOmadaMessage returnerte retcode={}, errbuf={}", retcode, errbuf);
 		}
-	}
 
-	private void saveKallLogg(KallLogg kallLogg) {
-		try {
-			kallLoggRepository.save(kallLogg);
-		} catch (Exception e) {
-			log.error("Feil ved logging av kalloggdata til databasen; feilmelding=" + e.getMessage(), e);
-		}
+		// Konverter til PlsqlProcedureResult:
+		// retcode "0"=0 (OK), "1"=1 (advarsel), "2"=-1 (feil → trigger UgyldigInputException)
+		int messageNumber = switch (retcode == null ? "0" : retcode) {
+			case "0"    -> 0;
+			case "1"    -> 1;
+			default     -> -1;
+		};
+
+		return new PlsqlProcedureResult(null, BigDecimal.valueOf(messageNumber), errbuf);
 	}
 }

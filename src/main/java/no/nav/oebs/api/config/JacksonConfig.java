@@ -2,20 +2,20 @@ package no.nav.oebs.api.config;
 
 import java.util.TimeZone;
 
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import tools.jackson.databind.DeserializationFeature;
 
 @Configuration
 public class JacksonConfig {
 
 	@Bean
-	public Jackson2ObjectMapperBuilderCustomizer jacksonCustomizer() {
-		return builder -> builder.featuresToDisable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-				.timeZone(TimeZone.getDefault())
-				.serializationInclusion(JsonInclude.Include.NON_NULL);
+	public JsonMapperBuilderCustomizer jacksonCustomizer() {
+		return builder -> builder
+				.disable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+				.defaultTimeZone(TimeZone.getDefault())
+				.changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_NULL));
 	}
 }

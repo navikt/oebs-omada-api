@@ -11,11 +11,12 @@ import no.nav.oebs.api.db.repository.KallLoggRepository;
 
 @Configuration
 public class HttpLoggingConfig {
+
 	@Bean
 	public FilterRegistrationBean<MdcFilter> mdcFilterRegistrationBean() {
 		FilterRegistrationBean<MdcFilter> registrationBean = new FilterRegistrationBean<>();
 		registrationBean.setFilter(new MdcFilter());
-		registrationBean.addUrlPatterns("/api/*");
+		registrationBean.addUrlPatterns("/api/*", "/scim/v2/*");
 		registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
 		return registrationBean;
 	}
@@ -24,7 +25,7 @@ public class HttpLoggingConfig {
 	public FilterRegistrationBean<HttpLoggingFilter> httpLoggingFilterRegistrationBean(KallLoggRepository kallLoggRepository) {
 		FilterRegistrationBean<HttpLoggingFilter> registrationBean = new FilterRegistrationBean<>();
 		registrationBean.setFilter(new HttpLoggingFilter(kallLoggRepository));
-		registrationBean.addUrlPatterns("/api/*");
+		registrationBean.addUrlPatterns("/api/*", "/scim/v2/*");
 		registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
 		return registrationBean;
 	}

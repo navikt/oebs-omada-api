@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.5</version>
+        <version>4.0.0</version>
         <relativePath/>
     </parent>
 
@@ -18,32 +18,122 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire.argLine>-Dfile.encoding=UTF-8</surefire.argLine>
+        <surefire.argLine>-Dfile.encoding=UTF-8 -Xshare:off -XX:+EnableDynamicAgentLoading --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED</surefire.argLine>
         <surefire.coverage.argLine/>
 
         <!-- NAV artifacts -->
         <token-validation.version>6.0.3</token-validation.version>
         <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
-        <nimbus-jose-jwt.version>9.25.6</nimbus-jose-jwt.version>
-        <springdoc-openapi.version>1.8.0</springdoc-openapi.version>
-        <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
+        <springdoc-openapi.version>2.7.0</springdoc-openapi.version>
         <lombok-version>1.18.38</lombok-version>
-        <netty.version>4.1.118.Final</netty.version>
-        <!-- CVE-2024-57699: json-smart 2.5.2+ -->
-        <json-smart.version>2.5.2</json-smart.version>
-        <!-- GHSA-72hv-8253-57qq: jackson 2.18.6+ -->
-        <jackson-bom.version>2.18.6</jackson-bom.version>
-        <!-- CVE-2025-48924: commons-lang3 3.18.0+ -->
-        <commons-lang3.version>3.18.0</commons-lang3.version>
+
+        <!-- CVE-fixes via Spring Boot BOM property overrides -->
+        <!-- GHSA-72hv-8253-57qq: jackson-core 2.x async parser DoS. Fikset i 2.18.6. -->
+        <jackson-2-bom.version>2.18.6</jackson-2-bom.version>
+        <!-- CVE-2026-24400: AssertJ XXE via isXmlEqualTo. Fikset i 3.27.7. -->
+        <assertj.version>3.27.7</assertj.version>
+        <!-- CVE-2026-1225: Logback arbitrary class instantiation. Fikset i 1.5.25. -->
+        <logback.version>1.5.25</logback.version>
+        <!-- CVE-2025-67735: Netty CRLF injection i HttpRequestEncoder. Fikset i 4.2.8. -->
+        <netty.version>4.2.8.Final</netty.version>
+        <!-- CVE-2025-66614 / CVE-2026-24733: Tomcat klientautentisering bypass. Fikset i 11.0.15. -->
+        <tomcat.version>11.0.15</tomcat.version>
 
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- CVE-2026-29062 / GHSA-72hv-8253-57qq: jackson-core 3.0.x har DoS-sårbarheter.
+                 Overstyrer kun jackson-core til 3.1.0 uten å oppgradere hele Jackson 3 BOM,
+                 da Spring Boot 4.0.0 er bygget mot jackson-databind 3.0.x. -->
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>3.1.0</version>
+            </dependency>
+
+            <!-- CVE-2025-11143: Jetty URI-parser differensiell parsing. Fikset i 12.1.5.
+                 CVE-2026-1605: Jetty GzipHandler memory leak / DoS. Fikset i 12.1.6. -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-io</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-security</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-session</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-xml</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-client</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-alpn-client</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-annotations</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-plus</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <!-- ee11-moduler må pines eksplisitt — ResponseUtils finnes kun fra 12.1.6 -->
+            <dependency>
+                <groupId>org.eclipse.jetty.ee11</groupId>
+                <artifactId>jetty-ee11-servlet</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.ee11</groupId>
+                <artifactId>jetty-ee11-websocket-servlet</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.ee11</groupId>
+                <artifactId>jetty-ee11-websocket-jetty-server</artifactId>
+                <version>12.1.6</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Spring Boot -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
@@ -66,11 +156,6 @@
                     <artifactId>validation-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
         <dependency>
@@ -111,31 +196,10 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
-        <!-- Swagger -->
-        <!--dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-ui</artifactId>
-            <version>${springdoc-openapi.version}</version>
-        </dependency -->
-
         <dependency>
             <groupId>no.nav.security</groupId>
             <artifactId>token-validation-spring</artifactId>
             <version>${token-validation.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-restclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-jackson</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-jackson</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -154,13 +218,13 @@
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>3.1.0</version> <!-- Required for Spring Boot 3.x -->
+            <version>3.1.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.6.0</version>
+            <version>${springdoc-openapi.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
@@ -178,54 +242,25 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Apache SCIMple SCIM 2.0 server -->
+        <!-- Apache SCIMple SCIM 2.0 server (inkluderer Jersey via spring-boot-starter-jersey) -->
         <dependency>
             <groupId>org.apache.directory.scimple</groupId>
             <artifactId>scim-server</artifactId>
             <version>1.0.0-M1</version>
         </dependency>
 
-        <!-- SCIMple integrasjon mot Spring (servlet) -->
+        <!-- SCIMple Spring Boot integrasjon (bruker Jersey internt) -->
         <dependency>
             <groupId>org.apache.directory.scimple</groupId>
             <artifactId>scim-spring-boot-starter</artifactId>
             <version>1.0.0-M1</version>
             <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-jersey</artifactId>
-                </exclusion>
+                <!-- Bruk Jetty, ikke Tomcat -->
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-tomcat</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <!-- Jersey for JAX-RS support -->
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-server</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-servlet</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-hk2</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-jackson</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.ext</groupId>
-            <artifactId>jersey-spring6</artifactId>
         </dependency>
 
     </dependencies>
@@ -248,12 +283,6 @@
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
                 </plugin>
-
-                <plugin>
-                    <groupId>org.sonarsource.scanner.maven</groupId>
-                    <artifactId>sonar-maven-plugin</artifactId>
-                    <version>${sonar-maven-plugin.version}</version>
-                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -262,6 +291,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <fork>true</fork>
+                    <compilerArgs>
+                        <!-- Demper sun.misc.Unsafe-advarsler fra lombok.permit.Permit i Java 21 -->
+                        <arg>-J--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=java.base/java.lang.reflect=ALL-UNNAMED</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

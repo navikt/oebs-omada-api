@@ -24,8 +24,12 @@ spec:
   azure:
     application:
       enabled: true
-      allowAllUsers: true
-      tenant: trygdeetaten.no
+  accessPolicy:
+    inbound:
+      rules:
+        - application: azure-token-generator
+          namespace: nais
+          cluster: dev-gcp
   envFrom:
     - secret: oebs-omada-q1
 

@@ -12,6 +12,7 @@ import no.nav.oebs.api.db.repository.PlsqlProcedureRepository.Operasjon;
 import no.nav.oebs.api.db.repository.PlsqlProcedureResult;
 import no.nav.oebs.api.scim.extension.NavOebsExtension;
 import no.nav.oebs.api.scim.KallLoggHelper;
+import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import no.nav.oebs.api.scim.service.ScimUserService;
 import org.apache.directory.scim.core.repository.Repository;
 import org.apache.directory.scim.spec.exception.ResourceException;
@@ -61,7 +62,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
 
     @Override
     public List<Class<? extends ScimExtension>> getExtensionList() {
-        return List.of(NavOebsExtension.class);
+        return List.of(NavOebsExtension.class, EnterpriseExtension.class);
     }
 
     @Override

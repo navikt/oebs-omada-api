@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler;
+import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import no.nav.oebs.api.config.common.security.ScimTokenValidationFilter;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
@@ -78,7 +79,7 @@ public class ScimpleConfig {
     public SchemaRegistry schemaRegistry() {
         SchemaRegistry registry = new SchemaRegistry();
         try {
-            registry.addSchema(ScimUser.class, List.of());
+            registry.addSchema(ScimUser.class, List.of(EnterpriseExtension.class));
             registry.addSchema(ScimGroup.class, List.of());
         } catch (Exception e) {
             log.error("SchemaRegistry: feil ved skjemaregistrering: {}", e.getMessage(), e);

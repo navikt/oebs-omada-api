@@ -30,7 +30,7 @@ spec:
       allowAllUsers: true
       tenant: nav.no
   envFrom:
-    - secret: oebs-omada
+    - secret: oebs-omada-prod
 
   prometheus:
     enabled: true

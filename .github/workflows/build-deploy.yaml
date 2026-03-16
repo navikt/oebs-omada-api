@@ -4,6 +4,20 @@ on:
     branches:
       - 'dev/**'
       - 'main'
+  pull_request:
+    branches:
+      - 'dev/**'
+      - 'main'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Miljø å deploye til'
+        required: true
+        type: choice
+        options:
+          - u1
+          - q1
+          - prod
 jobs:
   build_and_push:
     permissions:
@@ -29,47 +43,40 @@ jobs:
 
       - uses: nais/docker-build-push@v0
         id: docker-push
+        if: github.event_name != 'pull_request'
         with:
-          team: team-oebs # required
-          tenant: nav # optional
+          team: team-oebs
+          tenant: nav
           push_image: true
           pull: true
           dockerfile: Dockerfile
           docker_context: .
           cache_from: type=gha
           cache_to: type=gha,mode=max
-          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }} # required, but is defined as an organization variable
-          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }} # required, but is defined as an organization secret
+          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           salsa: true
 
-      - name: Deploy to NAIS (U1)
-        if: startsWith(github.ref, 'refs/heads/dev/u1') || github.ref == 'refs/heads/main'
+      - name: Deploy til U1
+        if: startsWith(github.ref, 'refs/heads/dev/u1') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'u1')
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-fss
           RESOURCE: .nais/nais-u1.yaml
           IMAGE: ${{ steps.docker-push.outputs.image }}
 
-#      - name: Deploy to NAIS (T1)
-#        if: startsWith(github.ref, 'refs/heads/dev/t1')  || github.ref == 'refs/heads/main'
-#        uses: nais/deploy/actions/deploy@v2
-#        env:
-#          CLUSTER: dev-gcp
-#          RESOURCE: .nais/nais-t1.yaml
-#          IMAGE: ${{ steps.docker-push.outputs.image }}
-#
-#      - name: Deploy to NAIS (Q1)
-#        if: startsWith(github.ref, 'refs/heads/dev/q1')  || github.ref == 'refs/heads/main'
-#        uses: nais/deploy/actions/deploy@v2
-#        env:
-#          CLUSTER: dev-gcp
-#          RESOURCE: .nais/nais-q1.yaml
-#          IMAGE: ${{ steps.docker-push.outputs.image }}
-#
-#      - name: Deploy to NAIS produksjon
-#        if: startsWith(github.ref, 'refs/heads/main')
-#        uses: nais/deploy/actions/deploy@v2
-#        env:
-#          CLUSTER: prod-gcp
-#          RESOURCE: .nais/nais-p.yaml
-#          IMAGE: ${{ steps.docker-push.outputs.image }}
+      - name: Deploy til Q1
+        if: startsWith(github.ref, 'refs/heads/dev/q1') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'q1')
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-fss
+          RESOURCE: .nais/nais-q1.yaml
+          IMAGE: ${{ steps.docker-push.outputs.image }}
+
+      - name: Deploy til produksjon
+        if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: prod-fss
+          RESOURCE: .nais/nais-p.yaml
+          IMAGE: ${{ steps.docker-push.outputs.image }}

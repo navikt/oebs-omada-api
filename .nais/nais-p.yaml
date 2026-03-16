@@ -27,9 +27,6 @@ spec:
   azure:
     application:
       enabled: true
-      accessPolicy:
-        inbound:
-          rules:
 
       tenant: nav.no
   envFrom:

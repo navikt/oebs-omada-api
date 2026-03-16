@@ -27,7 +27,10 @@ spec:
   azure:
     application:
       enabled: true
-      allowAllUsers: true
+      accessPolicy:
+        inbound:
+          rules:
+
       tenant: nav.no
   envFrom:
     - secret: oebs-omada-prod

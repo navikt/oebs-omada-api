@@ -17,6 +17,8 @@
       "name": "Base Environment",
       "data": {
         "base_url": "https://oebs-omada-api-u1.intern.dev.nav.no",
+        "token_url": "https://azure-token-generator.intern.dev.nav.no/api/public/m2m",
+        "aud": "612017d8-e85e-4062-acd0-fd39bb7a641b",
         "token": ""
       }
     },
@@ -27,6 +29,8 @@
       "name": "Local",
       "data": {
         "base_url": "http://localhost:8080",
+        "token_url": "https://azure-token-generator.intern.dev.nav.no/api/public/m2m",
+        "aud": "612017d8-e85e-4062-acd0-fd39bb7a641b",
         "token": "local-test-token"
       }
     },
@@ -37,8 +41,99 @@
       "name": "Dev (u1)",
       "data": {
         "base_url": "https://oebs-omada-api-u1.intern.dev.nav.no",
+        "token_url": "https://azure-token-generator.intern.dev.nav.no/api/public/m2m",
+        "aud": "612017d8-e85e-4062-acd0-fd39bb7a641b",
         "token": ""
       }
+    },
+    {
+      "_id": "env_q1",
+      "_type": "environment",
+      "parentId": "wrk_oebs_omada",
+      "name": "Q1",
+      "data": {
+        "base_url": "https://oebs-omada-api-q1.intern.dev.nav.no",
+        "token_url": "https://azure-token-generator.intern.dev.nav.no/api/public/m2m",
+        "aud": "",
+        "token": ""
+      }
+    },
+    {
+      "_id": "env_prod",
+      "_type": "environment",
+      "parentId": "wrk_oebs_omada",
+      "name": "Prod",
+      "data": {
+        "base_url": "https://oebs-omada-api.intern.nav.no",
+        "token_url": "",
+        "aud": "",
+        "token": ""
+      }
+    },
+
+    {
+      "_id": "fld_token",
+      "_type": "request_group",
+      "parentId": "wrk_oebs_omada",
+      "name": "Token",
+      "authentication": { "type": "none" }
+    },
+    {
+      "_id": "req_token_u1",
+      "_type": "request",
+      "parentId": "fld_token",
+      "name": "Token-u1",
+      "method": "POST",
+      "url": "{{ _.token_url }}",
+      "authentication": { "type": "none" },
+      "headers": [
+        { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+      ],
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          { "name": "aud", "value": "{{ _.aud }}", "disabled": false }
+        ]
+      },
+      "afterResponseScript": "const body = JSON.parse(response.body);\ninsomnia.environment.set('token', body.access_token);"
+    },
+    {
+      "_id": "req_token_q1",
+      "_type": "request",
+      "parentId": "fld_token",
+      "name": "Token-q1",
+      "method": "POST",
+      "url": "{{ _.token_url }}",
+      "authentication": { "type": "none" },
+      "headers": [
+        { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+      ],
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          { "name": "aud", "value": "{{ _.aud }}", "disabled": false }
+        ]
+      },
+      "afterResponseScript": "const body = JSON.parse(response.body);\ninsomnia.environment.set('token', body.access_token);"
+    },
+    {
+      "_id": "req_token_prod",
+      "_type": "request",
+      "parentId": "fld_token",
+      "name": "Token-prod",
+      "method": "POST",
+      "url": "{{ _.token_url }}",
+      "authentication": { "type": "none" },
+      "headers": [
+        { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+      ],
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          { "name": "aud", "value": "{{ _.aud }}", "disabled": false }
+        ]
+      },
+      "afterResponseScript": "const body = JSON.parse(response.body);\ninsomnia.environment.set('token', body.access_token);"
     },
 
     {
@@ -308,6 +403,82 @@
         { "name": "Status er 401", "code": "expect(response.status).to.equal(401);" },
         { "name": "Har SCIM Error schema", "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');" },
         { "name": "status-felt er '401'", "code": "const body = JSON.parse(response.body);\nexpect(body.status).to.equal('401');" }
+      ]
+    },
+
+    {
+      "_id": "fld_omada_bulk",
+      "_type": "request_group",
+      "parentId": "wrk_oebs_omada",
+      "name": "Omada Bulk (Protected)",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      }
+    },
+
+    {
+      "_id": "req_groups_with_members",
+      "_type": "request",
+      "parentId": "fld_omada_bulk",
+      "name": "GET GroupsWithMembers",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/GroupsWithMembers",
+      "authentication": { "type": "inherit" },
+      "headers": [],
+      "tests": [
+        { "name": "Status er 200", "code": "expect(response.status).to.equal(200);" },
+        { "name": "Har SCIM ListResponse schema", "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:ListResponse');" },
+        { "name": "totalResults er et tall", "code": "const body = JSON.parse(response.body);\nexpect(body.totalResults).to.be.a('number');" },
+        { "name": "Resources er en array", "code": "const body = JSON.parse(response.body);\nexpect(body.Resources).to.be.an('array');" },
+        { "name": "Hvert element har id og members", "code": "const body = JSON.parse(response.body);\nif (body.Resources.length > 0) {\n  const g = body.Resources[0];\n  expect(g.id).to.exist;\n  expect(g.displayName).to.exist;\n  expect(g.members).to.be.an('array');\n  expect(g.members.length).to.be.greaterThan(0);\n}" }
+      ]
+    },
+    {
+      "_id": "req_groups_with_members_401",
+      "_type": "request",
+      "parentId": "fld_omada_bulk",
+      "name": "GET GroupsWithMembers — 401 uten token",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/GroupsWithMembers",
+      "authentication": { "type": "none" },
+      "headers": [],
+      "tests": [
+        { "name": "Status er 401", "code": "expect(response.status).to.equal(401);" },
+        { "name": "Har SCIM Error schema", "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');" }
+      ]
+    },
+
+    {
+      "_id": "req_user_memberships",
+      "_type": "request",
+      "parentId": "fld_omada_bulk",
+      "name": "GET UserMemberships",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/UserMemberships",
+      "authentication": { "type": "inherit" },
+      "headers": [],
+      "tests": [
+        { "name": "Status er 200", "code": "expect(response.status).to.equal(200);" },
+        { "name": "Har SCIM ListResponse schema", "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:ListResponse');" },
+        { "name": "totalResults er et tall", "code": "const body = JSON.parse(response.body);\nexpect(body.totalResults).to.be.a('number');" },
+        { "name": "Resources er en array", "code": "const body = JSON.parse(response.body);\nexpect(body.Resources).to.be.an('array');" },
+        { "name": "Hvert element har id og groups", "code": "const body = JSON.parse(response.body);\nif (body.Resources.length > 0) {\n  const u = body.Resources[0];\n  expect(u.id).to.exist;\n  expect(u.groups).to.be.an('array');\n  expect(u.groups.length).to.be.greaterThan(0);\n  expect(u.groups[0].value).to.exist;\n}" },
+        { "name": "Ingen andre brukerattributter", "code": "const body = JSON.parse(response.body);\nif (body.Resources.length > 0) {\n  const u = body.Resources[0];\n  expect(u.displayName).to.not.exist;\n  expect(u.userName).to.not.exist;\n  expect(u.emails).to.not.exist;\n}" }
+      ]
+    },
+    {
+      "_id": "req_user_memberships_401",
+      "_type": "request",
+      "parentId": "fld_omada_bulk",
+      "name": "GET UserMemberships — 401 uten token",
+      "method": "GET",
+      "url": "{{ _.base_url }}/scim/v2/UserMemberships",
+      "authentication": { "type": "none" },
+      "headers": [],
+      "tests": [
+        { "name": "Status er 401", "code": "expect(response.status).to.equal(401);" },
+        { "name": "Har SCIM Error schema", "code": "const body = JSON.parse(response.body);\nexpect(body.schemas).to.include('urn:ietf:params:scim:api:messages:2.0:Error');" }
       ]
     },
 

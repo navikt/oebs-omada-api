@@ -242,6 +242,16 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Cache: Spring Cache abstraksjon + Caffeine som in-memory provider -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- Apache SCIMple SCIM 2.0 server (inkluderer Jersey via spring-boot-starter-jersey) -->
         <dependency>
             <groupId>org.apache.directory.scimple</groupId>

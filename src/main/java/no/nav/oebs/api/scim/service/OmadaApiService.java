@@ -6,7 +6,6 @@ import no.nav.oebs.api.scim.ScimGroupEntity;
 import no.nav.oebs.api.scim.ScimGroupMembershipEntity;
 import no.nav.oebs.api.scim.mapper.ScimGroupMapper;
 import no.nav.oebs.api.scim.mapper.ScimUserMapper;
-import no.nav.oebs.api.scim.repository.ScimGroupMembershipRepository;
 import no.nav.oebs.api.scim.repository.ScimGroupRepository;
 import org.apache.directory.scim.spec.resources.ScimGroup;
 import org.apache.directory.scim.spec.resources.ScimUser;
@@ -32,21 +31,21 @@ import java.util.stream.Collectors;
 public class OmadaApiService {
 
     private final ScimGroupRepository groupRepository;
-    private final ScimGroupMembershipRepository membershipRepository;
+    private final MembershipCacheService membershipCacheService;
     private final ScimGroupMapper groupMapper;
     private final ScimUserMapper userMapper;
 
     /**
-     * Alle grupper/ansvarsområder med minst ett aktivt medlem.
+     * Alle grupper/ansvarsområder med minst et aktivt medlem.
      * Members-arrayet er populert med navId-er.
      */
     public List<ScimGroup> getGroupsWithMembers() {
         long t0 = System.currentTimeMillis();
         log.info("[GroupsWithMembers] starter");
 
-        List<ScimGroupMembershipEntity> allMemberships = membershipRepository.findAll();
+        List<ScimGroupMembershipEntity> allMemberships = membershipCacheService.getAllMemberships();
         long t1 = System.currentTimeMillis();
-        log.info("[GroupsWithMembers] membershipRepository.findAll() – {} rader – {}ms",
+        log.info("[GroupsWithMembers] membershipCacheService.getAllMemberships() – {} rader – {}ms",
             allMemberships.size(), t1 - t0);
 
         Map<String, List<ScimGroupMembershipEntity>> membersByGroup = allMemberships.stream()
@@ -83,9 +82,9 @@ public class OmadaApiService {
         long t0 = System.currentTimeMillis();
         log.info("[UserMemberships] starter");
 
-        List<ScimGroupMembershipEntity> allMemberships = membershipRepository.findAll();
+        List<ScimGroupMembershipEntity> allMemberships = membershipCacheService.getAllMemberships();
         long t1 = System.currentTimeMillis();
-        log.info("[UserMemberships] membershipRepository.findAll() – {} rader – {}ms",
+        log.info("[UserMemberships] membershipCacheService.getAllMemberships() – {} rader – {}ms",
             allMemberships.size(), t1 - t0);
 
         Map<String, List<ScimGroupMembershipEntity>> groupsByNavId = allMemberships.stream()

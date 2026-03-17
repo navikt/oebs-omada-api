@@ -14,6 +14,10 @@ oebs:
   plsql:
     insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}
     org-id: ${PLSQL_ORG_ID:0}
+  cache:
+    membership-ttl-minutes: ${MEMBERSHIP_CACHE_TTL_MINUTES:30}
+    membership-refresh-ms: ${MEMBERSHIP_CACHE_REFRESH_MS:900000}
+    membership-initial-delay-ms: ${MEMBERSHIP_CACHE_INITIAL_DELAY_MS:10000}
 
 no.nav.security.jwt:
    issuer:

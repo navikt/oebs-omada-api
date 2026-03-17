@@ -44,7 +44,7 @@ public class ScimUserService {
             return Optional.empty();
         }
 
-        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByBrukerId(userEntity.get().getBrukerId());
+        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByNavId(userEntity.get().getNavId());
         ScimUser scimUser = userMapper.toScimUser(userEntity.get(), groups);
 
         log.debug("Bruker funnet: navId={}, brukerId={}, grupper={}", id, userEntity.get().getBrukerId(), groups.size());

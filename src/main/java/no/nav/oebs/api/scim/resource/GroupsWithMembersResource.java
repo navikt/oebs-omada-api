@@ -40,7 +40,6 @@ public class GroupsWithMembersResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupsWithMembers() {
-        log.debug("GET /scim/v2/GroupsWithMembers");
         long start = System.currentTimeMillis();
 
         List<ScimGroup> groups = omadaApiService.getGroupsWithMembers();
@@ -52,8 +51,12 @@ public class GroupsWithMembersResource {
         response.put("itemsPerPage", groups.size());
         response.put("Resources",    groups);
 
-        log.info("GET /scim/v2/GroupsWithMembers – {} grupper returnert på {}ms",
-            groups.size(), System.currentTimeMillis() - start);
+        long total = System.currentTimeMillis() - start;
+        if (total > 10_000) {
+            log.warn("[GroupsWithMembers] TREG RESPONS – {} grupper – total {}ms (inkl. serialisering)", groups.size(), total);
+        } else {
+            log.info("[GroupsWithMembers] total inkl. serialisering {}ms", total);
+        }
 
         return Response.ok(response).build();
     }

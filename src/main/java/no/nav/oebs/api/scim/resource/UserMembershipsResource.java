@@ -40,7 +40,6 @@ public class UserMembershipsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUserMemberships() {
-        log.debug("GET /scim/v2/UserMemberships");
         long start = System.currentTimeMillis();
 
         List<ScimUser> users = omadaApiService.getUserMemberships();
@@ -52,8 +51,12 @@ public class UserMembershipsResource {
         response.put("itemsPerPage", users.size());
         response.put("Resources",    users);
 
-        log.info("GET /scim/v2/UserMemberships – {} brukere returnert på {}ms",
-            users.size(), System.currentTimeMillis() - start);
+        long total = System.currentTimeMillis() - start;
+        if (total > 10_000) {
+            log.warn("[UserMemberships] TREG RESPONS – {} brukere – total {}ms (inkl. serialisering)", users.size(), total);
+        } else {
+            log.info("[UserMemberships] total inkl. serialisering {}ms", total);
+        }
 
         return Response.ok(response).build();
     }

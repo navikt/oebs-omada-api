@@ -41,25 +41,37 @@ public class OmadaApiService {
      * Members-arrayet er populert med navId-er.
      */
     public List<ScimGroup> getGroupsWithMembers() {
-        log.debug("Henter alle grupper med aktive medlemmer");
+        long t0 = System.currentTimeMillis();
+        log.info("[GroupsWithMembers] starter");
 
         List<ScimGroupMembershipEntity> allMemberships = membershipRepository.findAll();
+        long t1 = System.currentTimeMillis();
+        log.info("[GroupsWithMembers] membershipRepository.findAll() – {} rader – {}ms",
+            allMemberships.size(), t1 - t0);
 
         Map<String, List<ScimGroupMembershipEntity>> membersByGroup = allMemberships.stream()
+            .filter(m -> m.getScimGroupId() != null && m.getNavId() != null)
             .collect(Collectors.groupingBy(ScimGroupMembershipEntity::getScimGroupId));
+        long t2 = System.currentTimeMillis();
+        log.info("[GroupsWithMembers] gruppering – {} grupper – {}ms", membersByGroup.size(), t2 - t1);
 
         Map<String, ScimGroupEntity> groupById = groupRepository
             .findAllById(List.copyOf(membersByGroup.keySet()))
             .stream()
             .collect(Collectors.toMap(ScimGroupEntity::getScimId, g -> g));
+        long t3 = System.currentTimeMillis();
+        log.info("[GroupsWithMembers] groupRepository.findAllById() – {} entiteter – {}ms",
+            groupById.size(), t3 - t2);
 
         List<ScimGroup> result = membersByGroup.entrySet().stream()
             .filter(e -> groupById.containsKey(e.getKey()))
             .map(e -> groupMapper.toScimGroup(groupById.get(e.getKey()), e.getValue()))
             .sorted(Comparator.comparing(ScimGroup::getId))
             .toList();
+        long t4 = System.currentTimeMillis();
+        log.info("[GroupsWithMembers] mapping – {} ScimGroup-objekter – {}ms", result.size(), t4 - t3);
+        log.info("[GroupsWithMembers] ferdig – totalt {}ms", t4 - t0);
 
-        log.debug("Returnerer {} grupper med totalt {} medlemskap", result.size(), allMemberships.size());
         return result;
     }
 
@@ -68,20 +80,28 @@ public class OmadaApiService {
      * Ingen andre brukerattributter er inkludert.
      */
     public List<ScimUser> getUserMemberships() {
-        log.debug("Henter brukere med gruppemedlemskap");
+        long t0 = System.currentTimeMillis();
+        log.info("[UserMemberships] starter");
 
         List<ScimGroupMembershipEntity> allMemberships = membershipRepository.findAll();
+        long t1 = System.currentTimeMillis();
+        log.info("[UserMemberships] membershipRepository.findAll() – {} rader – {}ms",
+            allMemberships.size(), t1 - t0);
 
         Map<String, List<ScimGroupMembershipEntity>> groupsByNavId = allMemberships.stream()
+            .filter(m -> m.getNavId() != null && m.getScimGroupId() != null)
             .collect(Collectors.groupingBy(ScimGroupMembershipEntity::getNavId));
+        long t2 = System.currentTimeMillis();
+        log.info("[UserMemberships] gruppering – {} brukere – {}ms", groupsByNavId.size(), t2 - t1);
 
         List<ScimUser> result = groupsByNavId.entrySet().stream()
             .map(e -> userMapper.toSlimScimUser(e.getKey(), e.getValue()))
             .sorted(Comparator.comparing(ScimUser::getId))
             .toList();
+        long t3 = System.currentTimeMillis();
+        log.info("[UserMemberships] mapping – {} ScimUser-objekter – {}ms", result.size(), t3 - t2);
+        log.info("[UserMemberships] ferdig – totalt {}ms", t3 - t0);
 
-        log.debug("Returnerer {} brukere med gruppemedlemskap", result.size());
         return result;
     }
 }
-

@@ -10,6 +10,7 @@ import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler;
 import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import no.nav.oebs.api.config.common.security.ScimTokenValidationFilter;
+import no.nav.oebs.api.config.common.logging.RawRequestLoggingFilter;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
 import org.apache.directory.scim.core.repository.PatchHandler;
@@ -135,6 +136,7 @@ public class ScimpleConfig {
         });
 
         config.register(ScimTokenValidationFilter.class);
+        config.register(RawRequestLoggingFilter.class);
 
         // Registrer de to Omada bulk-ressursene som egne JAX-RS-klasser
         config.register(GroupsWithMembersResource.class);

@@ -71,12 +71,19 @@ public class ScimUserEntity {
     @Column(name = "FULLMAKT")
     private String fullmakt;  // per_job_definitions.segment1 - fullmakt-tittel fra per_jobs/per_job_definitions via assignment
 
+    @Column(name = "EGENANSATT")
+    private String egenansattFlag;  // 'Y' dersom bruker_id finnes i XXRTV_SKJERMING_TILGANG flex-verdisettet
+
     // Groups - hentes separat fra V_OMADA_USER_ALL_GROUPS
     @Transient
     private List<ScimGroupMembershipEntity> groups;
 
     public boolean isActive() {
         return "Y".equals(activeFlag);
+    }
+
+    public boolean isEgenansatt() {
+        return "Y".equals(egenansattFlag);
     }
 
     public String getFullName() {

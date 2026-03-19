@@ -80,6 +80,7 @@ public class ScimUserMapper {
         // NAV OeBS custom extension
         NavOebsExtension navExt = new NavOebsExtension();
         navExt.setFullmakt(entity.getFullmakt());
+        navExt.setEgenansatt(entity.isEgenansatt());
         user.addExtension(navExt);
 
         // Meta

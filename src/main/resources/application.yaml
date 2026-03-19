@@ -13,6 +13,7 @@ oebs:
     base-url: ${SCIM_BASE_URL}
   plsql:
     insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}
+    sync-procedure: ${PLSQL_SYNC_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.GetOmadaMessageStatus}
     org-id: ${PLSQL_ORG_ID:0}
   cache:
     membership-ttl-minutes: ${MEMBERSHIP_CACHE_TTL_MINUTES:30}

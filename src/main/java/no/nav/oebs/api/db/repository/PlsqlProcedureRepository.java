@@ -125,6 +125,8 @@ public class PlsqlProcedureRepository {
 		String errbuf  = (String) outParams.get(PARAM_ERRBUF);
 		String retcode = (String) outParams.get(PARAM_RETCODE);
 
+		log.info("InsertOmadaMessage returnerte retcode='{}', errbuf='{}'", retcode, errbuf);
+
 		if (retcode != null && !retcode.isBlank() && !retcode.equals("0")) {
 			log.warn("InsertOmadaMessage returnerte retcode={}, errbuf={}", retcode, errbuf);
 		}
@@ -168,6 +170,8 @@ public class PlsqlProcedureRepository {
 			String     errbuf      = (String)     outParams.get(PARAM_ERRBUF);
 			BigDecimal retcodeRaw  = (BigDecimal) outParams.get(PARAM_RETCODE);
 			int        retcodeInt  = retcodeRaw != null ? retcodeRaw.intValue() : 0;
+
+			log.info("start_import_ident_melding returnerte retcode='{}', errbuf='{}'", retcodeInt, errbuf);
 
 			// Oracle concurrent program-konvensjon: 0/null=suksess, 1=advarsel, 2=feil
 			// Både advarsel og feil behandles som EXCEPTION — sync-prosedyren skal alltid fullføre OK

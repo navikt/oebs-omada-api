@@ -125,17 +125,17 @@ public class PlsqlProcedureRepository {
 		String errbuf  = (String) outParams.get(PARAM_ERRBUF);
 		String retcode = (String) outParams.get(PARAM_RETCODE);
 
-		if (retcode != null && !retcode.equals("0")) {
+		if (retcode != null && !retcode.isBlank() && !retcode.equals("0")) {
 			log.warn("InsertOmadaMessage returnerte retcode={}, errbuf={}", retcode, errbuf);
 		}
-        
+
 		int messageNumber;
 		try {
-			int code = Integer.parseInt(retcode == null ? "0" : retcode);
+			int code = Integer.parseInt(retcode == null || retcode.isBlank() ? "0" : retcode);
 			if      (code >= 200 && code < 300) messageNumber = 0;   // 2xx = OK
 			else if (code >= 300 && code < 400) messageNumber = 1;   // 3xx = advarsel
 			else if (code >= 400)               messageNumber = -1;  // 4xx/5xx = feil
-			else messageNumber = switch (retcode == null ? "0" : retcode) {
+			else messageNumber = switch (retcode == null || retcode.isBlank() ? "0" : retcode) {
 				case "0"    -> 0;
 				case "1"    -> 1;
 				default     -> -1;
@@ -169,16 +169,15 @@ public class PlsqlProcedureRepository {
 			BigDecimal retcodeRaw  = (BigDecimal) outParams.get(PARAM_RETCODE);
 			int        retcodeInt  = retcodeRaw != null ? retcodeRaw.intValue() : 0;
 
-			if (retcodeInt != 0) {
-				log.warn("start_import_ident_melding returnerte retcode={}, errbuf={}", retcodeInt, errbuf);
+			// Oracle concurrent program-konvensjon: 0/null=suksess, 1=advarsel, 2=feil
+			// Både advarsel og feil behandles som EXCEPTION — sync-prosedyren skal alltid fullføre OK
+			if (retcodeInt == 1) {
+				log.warn("start_import_ident_melding returnerte retcode=1 (advarsel), errbuf={}", errbuf);
+			} else if (retcodeInt >= 2) {
+				log.error("start_import_ident_melding returnerte retcode={} (feil), errbuf={}", retcodeInt, errbuf);
 			}
 
-			// Oracle concurrent program-konvensjon: 0=OK, 1=advarsel, 2+=feil
-			int messageNumber = switch (retcodeInt) {
-				case 0  -> PlsqlMessageCodes.OK;
-				case 1  -> 1;
-				default -> PlsqlMessageCodes.EXCEPTION;
-			};
+			int messageNumber = retcodeInt == 0 ? PlsqlMessageCodes.OK : PlsqlMessageCodes.EXCEPTION;
 
 			return new PlsqlProcedureResult(null, messageNumber, errbuf, null, String.valueOf(retcodeInt));
 		} finally {

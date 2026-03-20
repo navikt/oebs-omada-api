@@ -37,6 +37,12 @@ spring:
     username: ${APPS_USER}
     password: ${APPS_PASSWORD}
     url: ${DB_URL}
+    hikari:
+      connection-init-sql: >
+        ALTER SESSION SET
+          NLS_LANGUAGE    = 'NORWEGIAN'
+          NLS_TERRITORY   = 'NORWAY'
+          NLS_DATE_FORMAT = 'YYYY-MM-DD'
   jpa:
     hibernate:
       ddl-auto: none

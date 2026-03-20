@@ -46,6 +46,9 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     @Value("${oebs.plsql.insert-procedure:XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}")
     private String plsqlProcedureName;
 
+    @Value("${oebs.plsql.sync-procedure:XXRTV_OMADA_JSON_IDENT_PKG.start_import_ident_melding}")
+    private String plsqlSyncProcedureName;
+
     private final ScimUserService userService;
     private final PlsqlProcedureRepository plsqlRepository;
     private final KallLoggHelper kallLoggHelper;
@@ -133,6 +136,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
             int httpStatus = result.getMessageNumber() < 0 ? 500 : 201;
             kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users", httpStatus, kalltid, userJson, result.getData(), result.getMessage());
             checkResult(result, "CREATE", resource.getId());
+            executeSyncIfPresent("CREATE", resource.getId(), result);
             ensureMeta(resource).setVersion("W/\"" + resource.getId().hashCode() + "\"");
             log.info("CREATE User OK: id={}", resource.getId());
             return resource;
@@ -167,6 +171,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
             int httpStatus = result.getMessageNumber() < 0 ? 500 : 200;
             kallLoggHelper.loggUt(KallLogg.METHOD_PUT, "/scim/v2/Users/" + id, httpStatus, kalltid, userJson, result.getData(), result.getMessage());
             checkResult(result, "UPDATE", id);
+            executeSyncIfPresent("UPDATE", id, result);
             ensureMeta(resource).setVersion("W/\"" + (id + System.currentTimeMillis()).hashCode() + "\"");
             log.info("UPDATE User OK: id={}", id);
             return resource;
@@ -203,6 +208,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
             int httpStatus = result.getMessageNumber() < 0 ? 500 : 204;
             kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id, httpStatus, kalltid, deleteJson, result.getData(), result.getMessage());
             checkResult(result, "DELETE", id);
+            executeSyncIfPresent("DELETE", id, result);
             log.info("DELETE User OK: id={}", id);
         } catch (ResourceException e) {
             throw e;
@@ -215,18 +221,42 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         }
     }
 
-    /**
-     * Sjekker prosedyre-resultatet og kaster ResourceException ved feil.
-     * retcode: 0 = OK, 1 = advarsel (behandles som OK), 2+ = feil
-     */
+    private void executeSyncIfPresent(String operasjon, String id,
+                                      PlsqlProcedureResult result) throws ResourceException {
+        if (result.getInterfaceMsgId() == null) return;
+
+        log.info("{} User: interfaceMsgId={} – kaller synkron prosedyre", operasjon, result.getInterfaceMsgId());
+        long syncStart = System.currentTimeMillis();
+        PlsqlProcedureResult syncResult = plsqlRepository.executeSyncProcedure(
+                plsqlSyncProcedureName, result.getInterfaceMsgId());
+        long syncKalltid = System.currentTimeMillis() - syncStart;
+        int syncStatus = syncResult.getMessageNumber() < 0 ? 500 : 200;
+        kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users/" + id + "/sync", syncStatus,
+                syncKalltid, String.valueOf(result.getInterfaceMsgId()),
+                syncResult.getData(), syncResult.getMessage());
+        checkResult(syncResult, operasjon + "_SYNC", id);
+        log.info("{} User synkron OK: id={}, interfaceMsgId={}, tid={}ms",
+                operasjon, id, result.getInterfaceMsgId(), syncKalltid);
+    }
+
     private void checkResult(PlsqlProcedureResult result, String operasjon, String id) throws ResourceException {
         if (result.getMessageNumber() < 0) {
-            log.error("{} User FEIL: id={}, errbuf={}", operasjon, id, result.getMessage());
-            throw new ResourceException(500, "Prosedyrefeil: " + result.getMessage());
+            int httpStatus = toHttpStatus(result.getRetcode());
+            log.error("{} User FEIL: id={}, retcode={}, errbuf={}", operasjon, id, result.getRetcode(), result.getMessage());
+            throw new ResourceException(httpStatus, result.getMessage());
         }
         if (result.getMessageNumber() > 0) {
-            log.warn("{} User advarsel: id={}, errbuf={}", operasjon, id, result.getMessage());
+            log.warn("{} User advarsel: id={}, retcode={}, errbuf={}", operasjon, id, result.getRetcode(), result.getMessage());
         }
+    }
+
+    /** Tolker retcode som HTTP-statuskode. Gyldige HTTP-koder (200–599) brukes direkte, ellers 500. */
+    private int toHttpStatus(String retcode) {
+        try {
+            int code = Integer.parseInt(retcode);
+            if (code >= 200 && code <= 599) return code;
+        } catch (NumberFormatException | NullPointerException ignored) {}
+        return 500;
     }
 
     private Meta ensureMeta(ScimUser resource) {

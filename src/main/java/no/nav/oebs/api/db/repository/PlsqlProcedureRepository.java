@@ -1,7 +1,6 @@
 package no.nav.oebs.api.db.repository;
 
 import java.math.BigDecimal;
-import java.sql.Clob;
 import java.sql.Types;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,11 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 public class PlsqlProcedureRepository {
 
 	// Parameternavn matcher XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage
-	private static final String PARAM_ERRBUF       = "errbuf";
-	private static final String PARAM_RETCODE      = "retcode";
-	private static final String PARAM_ORG_ID       = "p_org_id";
-	private static final String PARAM_JSON_MESSAGE = "p_json_message";
-	private static final String PARAM_OPERASJON    = "p_operasjon";
+	private static final String PARAM_ERRBUF              = "errbuf";
+	private static final String PARAM_RETCODE             = "retcode";
+	private static final String PARAM_ORG_ID              = "p_org_id";
+	private static final String PARAM_JSON_MESSAGE        = "p_json_message";
+	private static final String PARAM_OPERASJON           = "p_operasjon";
+	private static final String PARAM_X_INTERFACE_MSG_ID  = "x_interface_msg_id";
+	private static final String PARAM_P_INTERFACE_MSG_ID  = "p_interface_msg_id";
 
 	/** Gyldige operasjonsverdier */
 	public enum Operasjon {
@@ -56,11 +57,12 @@ public class PlsqlProcedureRepository {
 			validateProcedureName(procedureName);
 
 			SimpleJdbcCall jdbcCall = getJdbcCall(procedureName,
-					new SqlOutParameter(PARAM_ERRBUF,       Types.VARCHAR),
-					new SqlOutParameter(PARAM_RETCODE,      Types.VARCHAR),
-					new SqlParameter(  PARAM_ORG_ID,        Types.NUMERIC),
-					new SqlParameter(  PARAM_JSON_MESSAGE,  Types.CLOB),
-					new SqlParameter(  PARAM_OPERASJON,     Types.VARCHAR));
+					new SqlOutParameter(PARAM_ERRBUF,              Types.VARCHAR),
+					new SqlOutParameter(PARAM_RETCODE,             Types.VARCHAR),
+					new SqlOutParameter(PARAM_X_INTERFACE_MSG_ID,  Types.NUMERIC),
+					new SqlParameter(  PARAM_ORG_ID,               Types.NUMERIC),
+					new SqlParameter(  PARAM_JSON_MESSAGE,         Types.CLOB),
+					new SqlParameter(  PARAM_OPERASJON,            Types.VARCHAR));
 
 			SqlParameterSource inParams = new MapSqlParameterSource()
 					.addValue(PARAM_ORG_ID,      orgId)
@@ -119,25 +121,69 @@ public class PlsqlProcedureRepository {
 
 	private PlsqlProcedureResult executeProcedure(SimpleJdbcCall jdbcCall, SqlParameterSource inParams) {
 		Map<String, Object> outParams = jdbcCall.execute(inParams);
-
-		// errbuf/retcode er Oracle concurrent program-konvensjoner:
-		// retcode: "0" = suksess, "1" = advarsel, "2" = feil
-		// errbuf:  feilmelding ved retcode > 0
+        
 		String errbuf  = (String) outParams.get(PARAM_ERRBUF);
 		String retcode = (String) outParams.get(PARAM_RETCODE);
 
 		if (retcode != null && !retcode.equals("0")) {
 			log.warn("InsertOmadaMessage returnerte retcode={}, errbuf={}", retcode, errbuf);
 		}
+        
+		int messageNumber;
+		try {
+			int code = Integer.parseInt(retcode == null ? "0" : retcode);
+			if      (code >= 200 && code < 300) messageNumber = 0;   // 2xx = OK
+			else if (code >= 300 && code < 400) messageNumber = 1;   // 3xx = advarsel
+			else if (code >= 400)               messageNumber = -1;  // 4xx/5xx = feil
+			else messageNumber = switch (retcode == null ? "0" : retcode) {
+				case "0"    -> 0;
+				case "1"    -> 1;
+				default     -> -1;
+			};
+		} catch (NumberFormatException e) {
+			messageNumber = -1;
+		}
 
-		// Konverter til PlsqlProcedureResult:
-		// retcode "0"=0 (OK), "1"=1 (advarsel), "2"=-1 (feil → trigger UgyldigInputException)
-		int messageNumber = switch (retcode == null ? "0" : retcode) {
-			case "0"    -> 0;
-			case "1"    -> 1;
-			default     -> -1;
-		};
+		BigDecimal rawMsgId = (BigDecimal) outParams.get(PARAM_X_INTERFACE_MSG_ID);
+		Long interfaceMsgId = rawMsgId != null ? rawMsgId.longValue() : null;
 
-		return new PlsqlProcedureResult(null, BigDecimal.valueOf(messageNumber), errbuf);
+		return new PlsqlProcedureResult(null, BigDecimal.valueOf(messageNumber), errbuf, interfaceMsgId, retcode);
+	}
+    
+	public PlsqlProcedureResult executeSyncProcedure(String procedureName, Long interfaceMsgId) {
+		long startTime = System.currentTimeMillis();
+		try {
+			validateProcedureName(procedureName);
+
+			SimpleJdbcCall jdbcCall = getJdbcCall(procedureName,
+					new SqlParameter(   PARAM_P_INTERFACE_MSG_ID,  Types.NUMERIC),
+					new SqlOutParameter(PARAM_ERRBUF,               Types.VARCHAR),
+					new SqlOutParameter(PARAM_RETCODE,              Types.NUMERIC));  // number, ikke varchar2
+
+			SqlParameterSource inParams = new MapSqlParameterSource()
+					.addValue(PARAM_P_INTERFACE_MSG_ID, interfaceMsgId);
+
+			Map<String, Object> outParams = jdbcCall.execute(inParams);
+
+			String     errbuf      = (String)     outParams.get(PARAM_ERRBUF);
+			BigDecimal retcodeRaw  = (BigDecimal) outParams.get(PARAM_RETCODE);
+			int        retcodeInt  = retcodeRaw != null ? retcodeRaw.intValue() : 0;
+
+			if (retcodeInt != 0) {
+				log.warn("start_import_ident_melding returnerte retcode={}, errbuf={}", retcodeInt, errbuf);
+			}
+
+			// Oracle concurrent program-konvensjon: 0=OK, 1=advarsel, 2+=feil
+			int messageNumber = switch (retcodeInt) {
+				case 0  -> PlsqlMessageCodes.OK;
+				case 1  -> 1;
+				default -> PlsqlMessageCodes.EXCEPTION;
+			};
+
+			return new PlsqlProcedureResult(null, messageNumber, errbuf, null, String.valueOf(retcodeInt));
+		} finally {
+			log.debug("executeSyncProcedure: procedure={}, interfaceMsgId={}, tid={}ms",
+					procedureName, interfaceMsgId, System.currentTimeMillis() - startTime);
+		}
 	}
 }

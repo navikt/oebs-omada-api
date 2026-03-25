@@ -63,3 +63,8 @@ springdoc:
   swagger-ui:
     disable-swagger-default-url: true
     tags-sorter: alpha
+
+logging:
+  level:
+    no.nav.security.token.support: DEBUG
+    no.nav.security.jwt: DEBUG

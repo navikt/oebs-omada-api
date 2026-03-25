@@ -242,6 +242,21 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Mock OAuth2-server for JWT-generering i integrasjonstester -->
+        <dependency>
+            <groupId>no.nav.security</groupId>
+            <artifactId>mock-oauth2-server</artifactId>
+            <version>2.1.10</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WebFlux (kun klientside) – trengs for WebTestClient i integrasjonstester -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Cache: Spring Cache abstraksjon + Caffeine som in-memory provider -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

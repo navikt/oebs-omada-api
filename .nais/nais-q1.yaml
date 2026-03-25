@@ -1,5 +1,3 @@
-#TODO: Fikse NAIS.yaml
-#TODO: Endre accessPolicy
 apiVersion: nais.io/v1alpha1
 kind: Application
 metadata:

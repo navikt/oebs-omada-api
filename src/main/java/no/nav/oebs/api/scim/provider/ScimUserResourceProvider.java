@@ -49,6 +49,9 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     @Value("${oebs.plsql.sync-procedure:XXRTV_OMADA_JSON_IDENT_PKG.start_import_ident_melding}")
     private String plsqlSyncProcedureName;
 
+    @Value("${oebs.scim.sync-enabled:true}")
+    private boolean syncEnabled;
+
     private final ScimUserService userService;
     private final PlsqlProcedureRepository plsqlRepository;
     private final KallLoggHelper kallLoggHelper;
@@ -224,6 +227,12 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     private void executeSyncIfPresent(String operasjon, String id,
                                       PlsqlProcedureResult result) throws ResourceException {
         if (result.getInterfaceMsgId() == null) return;
+
+        if (!syncEnabled) {
+            log.info("{} User: sync deaktivert (SCIM_SYNC_ENABLED=false) – melding id={} er lagret i tabell, synkronisering hoppes over",
+                    operasjon, result.getInterfaceMsgId());
+            return;
+        }
 
         log.info("{} User: interfaceMsgId={} – kaller synkron prosedyre", operasjon, result.getInterfaceMsgId());
         long syncStart = System.currentTimeMillis();

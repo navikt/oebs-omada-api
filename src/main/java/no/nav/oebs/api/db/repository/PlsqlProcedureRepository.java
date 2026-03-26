@@ -33,6 +33,11 @@ public class PlsqlProcedureRepository {
 	private static final String PARAM_OPERASJON           = "p_operasjon";
 	private static final String PARAM_X_INTERFACE_MSG_ID  = "x_interface_msg_id";
 	private static final String PARAM_P_INTERFACE_MSG_ID  = "p_interface_msg_id";
+    private static final String PARAM_PHASE                 = "phase";
+    private static final String PARAM_STATUS                = "status";
+    private static final String PARAM_DEV_PHASE             = "dev_phase";
+    private static final String PARAM_DEV_STATUS            = "dev_status";
+    private static final String PARAM_MESSAGE               = "message"
 
 	/** Gyldige operasjonsverdier */
 	public enum Operasjon {
@@ -175,8 +180,13 @@ public class PlsqlProcedureRepository {
 
 			SimpleJdbcCall jdbcCall = getJdbcCall(procedureName,
 					new SqlOutParameter(PARAM_ERRBUF,              Types.VARCHAR),
-					new SqlOutParameter(PARAM_RETCODE,             Types.NUMERIC),  // number, ikke varchar2
-					new SqlParameter(   PARAM_P_INTERFACE_MSG_ID, Types.NUMERIC));
+					new SqlOutParameter(PARAM_RETCODE,             Types.NUMERIC),
+                    new SqlOutParameter(PARAM_PHASE,             Types.VARCHAR),
+                    new SqlOutParameter(PARAM_STATUS,             Types.VARCHAR),
+                    new SqlOutParameter(PARAM_DEV_PHASE,         Types.VARCHAR),
+                    new SqlOutParameter(PARAM_DEV_STATUS,         Types.VARCHAR),
+                    new SqlOutParameter(PARAM_MESSAGE,             Types.VARCHAR),
+                    new SqlParameter(   PARAM_P_INTERFACE_MSG_ID, Types.NUMERIC));
 
 			SqlParameterSource inParams = new MapSqlParameterSource()
 					.addValue(PARAM_P_INTERFACE_MSG_ID, interfaceMsgId);
@@ -196,6 +206,10 @@ public class PlsqlProcedureRepository {
 			} else if (retcodeInt >= 2) {
 				log.error("start_import_ident_melding returnerte retcode={} (feil), errbuf={}", retcodeInt, errbuf);
 			}
+            log.info("start_import_ident_melding returnerte phase='{}', status='{}', dev_phase='{}', dev_status='{}', message='{}'",
+                    outParams.get(PARAM_PHASE), outParams.get(PARAM_STATUS),
+                    outParams.get(PARAM_DEV_PHASE), outParams.get(PARAM_DEV_STATUS),
+                    outParams.get(PARAM_MESSAGE));
 
 			int messageNumber = mapSyncRetcode(retcodeInt);
 

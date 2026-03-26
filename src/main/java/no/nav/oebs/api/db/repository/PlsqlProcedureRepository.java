@@ -37,7 +37,7 @@ public class PlsqlProcedureRepository {
     private static final String PARAM_STATUS                = "status";
     private static final String PARAM_DEV_PHASE             = "dev_phase";
     private static final String PARAM_DEV_STATUS            = "dev_status";
-    private static final String PARAM_MESSAGE               = "message"
+    private static final String PARAM_MESSAGE               = "message";
 
 	/** Gyldige operasjonsverdier */
 	public enum Operasjon {

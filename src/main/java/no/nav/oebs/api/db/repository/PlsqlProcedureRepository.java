@@ -206,14 +206,18 @@ public class PlsqlProcedureRepository {
 			} else if (retcodeInt >= 2) {
 				log.error("start_import_ident_melding returnerte retcode={} (feil), errbuf={}", retcodeInt, errbuf);
 			}
+
+            String devPhase  = (String) outParams.get(PARAM_DEV_PHASE);
+            String devStatus = (String) outParams.get(PARAM_DEV_STATUS);
+
             log.info("start_import_ident_melding returnerte phase='{}', status='{}', dev_phase='{}', dev_status='{}', message='{}'",
                     outParams.get(PARAM_PHASE), outParams.get(PARAM_STATUS),
-                    outParams.get(PARAM_DEV_PHASE), outParams.get(PARAM_DEV_STATUS),
+                    devPhase, devStatus,
                     outParams.get(PARAM_MESSAGE));
 
 			int messageNumber = mapSyncRetcode(retcodeInt);
 
-			return new PlsqlProcedureResult(null, messageNumber, errbuf, null, String.valueOf(retcodeInt));
+			return new PlsqlProcedureResult(null, messageNumber, errbuf, null, String.valueOf(retcodeInt), devPhase, devStatus);
 		} finally {
 			log.debug("executeSyncProcedure: procedure={}, interfaceMsgId={}, tid={}ms",
 					procedureName, interfaceMsgId, System.currentTimeMillis() - startTime);

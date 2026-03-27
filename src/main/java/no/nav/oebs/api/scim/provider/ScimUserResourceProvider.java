@@ -239,11 +239,26 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         PlsqlProcedureResult syncResult = plsqlRepository.executeSyncProcedure(
                 plsqlSyncProcedureName, result.getInterfaceMsgId());
         long syncKalltid = System.currentTimeMillis() - syncStart;
-        int syncStatus = syncResult.getMessageNumber() < 0 ? 500 : 200;
+
+        boolean pending = isSyncPending(syncResult);
+        int syncStatus = syncResult.getMessageNumber() < 0
+                ? mapSyncRetcodeToHttpStatus(syncResult.getRetcode())
+                : pending ? 202 : syncSuccessHttpStatus(operasjon);
+
         kallLoggHelper.loggUt(KallLogg.METHOD_POST, "/scim/v2/Users/" + id + "/sync", syncStatus,
                 syncKalltid, String.valueOf(result.getInterfaceMsgId()),
                 syncResult.getData(), syncResult.getMessage());
-        checkResult(syncResult, operasjon + "_SYNC", id);
+
+        if (pending) {
+            log.info("{} User SYNC akseptert (202): id={}, interfaceMsgId={}, dev_phase={}, dev_status={}",
+                    operasjon, id, result.getInterfaceMsgId(), syncResult.getDevPhase(), syncResult.getDevStatus());
+            throw new ResourceException(202,
+                    "Synkronisering er akseptert og pågår (dev_phase=" + syncResult.getDevPhase()
+                    + ", dev_status=" + syncResult.getDevStatus() + ")");
+        }
+
+        checkSyncResult(syncResult, operasjon + "_SYNC", id);
+
         log.info("{} User synkron OK: id={}, interfaceMsgId={}, tid={}ms",
                 operasjon, id, result.getInterfaceMsgId(), syncKalltid);
     }
@@ -259,7 +274,74 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         }
     }
 
-    /** Tolker retcode som HTTP-statuskode. Gyldige HTTP-koder (200–599) brukes direkte, ellers 500. */
+    /**
+     * Sjekker resultat fra sync-prosedyren og kaster ResourceException med korrekt
+     * HTTP-status og errbuf-melding fra databasen inkludert i API-svaret.
+     *
+     * Konvensjon for sync (Oracle concurrent program):
+     *   retcode=0 → suksess
+     *   retcode=1 → advarsel  → HTTP 422 Unprocessable Content
+     *   retcode=2+ → feil     → HTTP 500 Internal Server Error
+     */
+    private void checkSyncResult(PlsqlProcedureResult result, String operasjon, String id) throws ResourceException {
+        if (result.getMessageNumber() < 0) {
+            int httpStatus = mapSyncRetcodeToHttpStatus(result.getRetcode());
+            String errbuf = result.getMessage() != null ? result.getMessage() : "Synkronisering feilet uten feilmelding";
+            if (httpStatus == 422) {
+                log.warn("{} User SYNC advarsel: id={}, retcode={}, errbuf={}", operasjon, id, result.getRetcode(), errbuf);
+            } else {
+                log.error("{} User SYNC FEIL: id={}, retcode={}, errbuf={}", operasjon, id, result.getRetcode(), errbuf);
+            }
+            throw new ResourceException(httpStatus,
+                    "Synkronisering mot OEBS feilet (retcode=" + result.getRetcode() + "): " + errbuf);
+        }
+        if (result.getMessageNumber() > 0) {
+            log.warn("{} User SYNC advarsel: id={}, retcode={}, errbuf={}", operasjon, id, result.getRetcode(), result.getMessage());
+        }
+    }
+
+    /**
+     * Mapper Oracle concurrent program retcode til HTTP-statuskode:
+     *   1  → 422 Unprocessable Content (advarsel — melding er lagret men synkronisering hadde avvik)
+     *   2+ → 500 Internal Server Error  (feil — synkronisering feilet)
+     * Gyldige HTTP-koder (200–599) i retcode brukes direkte (fremtidssikring).
+     */
+    static int mapSyncRetcodeToHttpStatus(String retcode) {
+        try {
+            int code = Integer.parseInt(retcode);
+            if (code >= 200 && code <= 599) return code;
+            return switch (code) {
+                case 1  -> 422;
+                default -> 500;
+            };
+        } catch (NumberFormatException | NullPointerException ignored) {
+            return 500;
+        }
+    }
+
+    static int syncSuccessHttpStatus(String operasjon) {
+        if (operasjon == null) return 200;
+        return switch (operasjon.toUpperCase()) {
+            case "CREATE" -> 201;
+            case "DELETE" -> 200;
+            default       -> 200;
+        };
+    }
+
+    static boolean isSyncPending(PlsqlProcedureResult result) {
+        try {
+            int retcodeInt = Integer.parseInt(result.getRetcode() != null ? result.getRetcode() : "0");
+            if (retcodeInt >= 2) return false;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
+        String phase  = result.getDevPhase()  != null ? result.getDevPhase().toUpperCase()  : "";
+        String status = result.getDevStatus() != null ? result.getDevStatus().toUpperCase() : "";
+        boolean pendingPhase  = phase.equals("PENDING")  || phase.equals("RUNNING");
+        boolean pendingStatus = status.equals("STANDBY") || status.equals("NORMAL");
+        return pendingPhase && pendingStatus;
+    }
+
     private int toHttpStatus(String retcode) {
         try {
             int code = Integer.parseInt(retcode);

@@ -41,8 +41,6 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 
 		long startTime = System.currentTimeMillis();
 
-		// Korrelasjons-ID er allerede satt i MDC av CorrelationIdFilter som kjører før dette filteret
-
 		HttpServletRequest requestToUse = request;
 		if (!(request instanceof ContentCachingRequestWrapper)) {
 			requestToUse = new ContentCachingRequestWrapper(request, CACHE_SIZE);
@@ -76,13 +74,8 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 					.build();
 
 			saveKallLogg(kallLogg);
-			MdcOperations.remove(MdcOperations.MDC_CORRELATION_ID);
 		}
 	}
-
-	//
-	// Format request
-	//
 
 	private String formatRequest(HttpServletRequest request) {
 		StringBuilder builder = new StringBuilder();

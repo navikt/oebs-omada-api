@@ -62,7 +62,10 @@ public class ScimUserMapper {
                     UserGroup gm = new UserGroup();
                     gm.setValue(g.getScimGroupId());
                     gm.setDisplay(g.getScimDisplayName());
-                    gm.setRef(baseUrl + "/scim/v2/Groups/" + g.getScimGroupId());
+                    // $ref settes kun når vi har en gyldig gruppe-ID — ikke forventet i innkommende meldinger fra Omada
+                    if (g.getScimGroupId() != null) {
+                        gm.setRef(baseUrl + "/scim/v2/Groups/" + g.getScimGroupId());
+                    }
                     return gm;
                 })
                 .collect(Collectors.toList());

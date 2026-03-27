@@ -11,6 +11,10 @@ import java.time.LocalDateTime;
 
 /**
  * Felles hjelper for logging av SCIM-kall til KallLogg-tabellen.
+ *
+ * Konvensjon:
+ *   INN  (TYPE_REST)  — inngående kall fra Omada: request=Omada-payload, response=svar til Omada
+ *   UT   (TYPE_PLSQL) — utgående kall til OEBS/PL/SQL: request=JSON vi sender, response=OEBS-resultat
  */
 @Slf4j
 @Component
@@ -20,32 +24,47 @@ public class KallLoggHelper {
     private final KallLoggRepository kallLoggRepository;
 
     /**
-     * Logger et utgående kall (POST, PUT, DELETE) mot PL/SQL.
+     * Logger et inngående kall fra Omada med request-body (POST/PUT/DELETE).
+     * request  = payload Omada sendte oss
+     * response = svaret vi returnerer til Omada
      */
-    public void loggUt(String method, String operation, int status,
-                     long kalltid, String request, String response, String logginfo) {
-        save(KallLogg.RETNING_UT, method, operation, status, kalltid, request, response, logginfo);
+    public void loggInn(String method, String operation, int status,
+                        long kalltid, String request, String response, String logginfo) {
+        save(KallLogg.RETNING_INN, KallLogg.TYPE_REST, method, operation, status, kalltid, request, response, logginfo);
     }
 
     /**
-     * Logger et inngående kall (GET) fra Omada.
+     * Logger et inngående kall fra Omada uten request-body (GET).
+     * response = svaret vi returnerer til Omada
      */
     public void loggInn(String method, String operation, int status,
                         long kalltid, String response, String logginfo) {
-        save(KallLogg.RETNING_INN, method, operation, status, kalltid, null, response, logginfo);
+        save(KallLogg.RETNING_INN, KallLogg.TYPE_REST, method, operation, status, kalltid, null, response, logginfo);
     }
 
-    private void save(String retning, String method, String operation, int status,
+    /**
+     * Logger et utgående kall til OEBS (PL/SQL-prosedyre).
+     * operation = prosedyrenavn (f.eks. APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage)
+     * request   = JSON vi sendte til OEBS
+     * response  = data OEBS returnerte (errbuf / data)
+     */
+    public void loggUt(String method, String operation, int status,
+                     long kalltid, String request, String response, String logginfo) {
+        save(KallLogg.RETNING_UT, KallLogg.TYPE_PLSQL, method, operation, status, kalltid, request, response, logginfo);
+    }
+
+    private void save(String retning, String type, String method, String operation, int status,
                       long kalltid, String request, String response, String logginfo) {
         String korrelasjonId = MdcOperations.get(MdcOperations.MDC_CORRELATION_ID);
 
-        log.info("[{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={} response={}",
-                retning, method, operation, status, kalltid, korrelasjonId, request, truncate(response));
+        log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={} response={} logginfo={}",
+                retning, type, method, operation, status, kalltid, korrelasjonId,
+                truncate(request), truncate(response), logginfo);
 
         KallLogg kallLogg = KallLogg.builder()
                 .korrelasjonId(korrelasjonId)
                 .tidspunkt(LocalDateTime.now())
-                .type(KallLogg.TYPE_REST)
+                .type(type)
                 .kallRetning(retning)
                 .method(method)
                 .operation(operation)

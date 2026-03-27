@@ -3,9 +3,6 @@ package no.nav.oebs.api.config;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
-import no.nav.oebs.api.scim.service.OmadaApiService;
-import no.nav.oebs.api.scim.resource.GroupsWithMembersResource;
-import no.nav.oebs.api.scim.resource.UserMembershipsResource;
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler;
 import org.apache.directory.scim.spec.extension.EnterpriseExtension;
@@ -64,10 +61,6 @@ public class ScimpleConfig {
         log.info("║ GET    /scim/v2/ServiceProviderConfig                ║");
         log.info("║ GET    /scim/v2/Schemas                              ║");
         log.info("║ GET    /scim/v2/ResourceTypes                        ║");
-        log.info("╠══════════════════════════════════════════════════════╣");
-        log.info("║ — Omada bulk (SCIM ListResponse) ————————————————————║");
-        log.info("║ GET    /scim/v2/GroupsWithMembers                    ║");
-        log.info("║ GET    /scim/v2/UserMemberships                      ║");
         log.info("╚══════════════════════════════════════════════════════╝");
     }
 
@@ -123,7 +116,6 @@ public class ScimpleConfig {
             ServerConfiguration serverConfiguration,
             EtagGenerator etagGenerator,
             KallLoggHelper kallLoggHelper,
-            OmadaApiService omadaApiService,
             MultiIssuerConfiguration multiIssuerConfiguration) {
 
         JwtTokenValidationHandler validationHandler = new JwtTokenValidationHandler(multiIssuerConfiguration);
@@ -138,10 +130,6 @@ public class ScimpleConfig {
         config.register(ScimTokenValidationFilter.class);
         config.register(RawRequestLoggingFilter.class);
 
-        // Registrer de to Omada bulk-ressursene som egne JAX-RS-klasser
-        config.register(GroupsWithMembersResource.class);
-        config.register(UserMembershipsResource.class);
-
         config.register(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -153,8 +141,6 @@ public class ScimpleConfig {
                 bind(etagGenerator).to(EtagGenerator.class);
                 bind(kallLoggHelper).to(KallLoggHelper.class);
                 bind(validationHandler).to(JwtTokenValidationHandler.class);
-                // Bind Spring-bean til HK2 slik at JAX-RS-ressursene kan injecte den
-                bind(omadaApiService).to(OmadaApiService.class);
             }
         });
 

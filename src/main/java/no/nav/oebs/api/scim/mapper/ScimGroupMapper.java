@@ -35,7 +35,9 @@ public class ScimGroupMapper {
                     GroupMembership member = new GroupMembership();
                     member.setValue(m.getNavId());
                     member.setDisplay(m.getNavId());
-                    member.setRef(baseUrl + "/scim/v2/Users/" + m.getNavId());
+                    if (m.getNavId() != null) {
+                        member.setRef(baseUrl + "/scim/v2/Users/" + m.getNavId());
+                    }
                     return member;
                 })
                 .collect(Collectors.toList());

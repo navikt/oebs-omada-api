@@ -65,8 +65,14 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
 
         HttpRequest httpRequest = headerName -> "Authorization".equalsIgnoreCase(headerName) ? authHeader : null;
 
-
         var tokenContext = validationHandler.getValidatedTokens(httpRequest);
+
+        // Ingen issuers konfigurert → lokal/test-modus uten JWT-validering
+        if (tokenContext.getIssuers().isEmpty()) {
+            log.warn("ScimTokenValidationFilter: ingen issuers konfigurert — passer gjennom uten validering [{} {}]", method, path);
+            return;
+        }
+
         boolean hasValidToken = tokenContext.getIssuers().stream()
                 .anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
 

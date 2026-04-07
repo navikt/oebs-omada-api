@@ -16,6 +16,10 @@ oebs:
     insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}
     sync-procedure: ${PLSQL_SYNC_PROCEDURE:APPS.XXRTV_OMADA_JSON_IDENT_PKG.start_import_ident_melding}
     org-id: ${PLSQL_ORG_ID:0}
+  kalllogg:
+    retention-days: ${KALLLOGG_RETENTION_DAYS:30}
+    # Cron-uttrykk for opprydding — standard kl. 02:00 hver natt
+    cleanup-cron: ${KALLLOGG_CLEANUP_CRON:0 0 2 * * *}
 
 no.nav.security.jwt:
    issuer:

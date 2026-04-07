@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE configuration>
-
 <configuration>
     <appender name="stdout_json" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
@@ -10,6 +8,7 @@
                 <exclude>java\.util\.concurrent\..*</exclude>
                 <exclude>org\.springframework\.web\..*</exclude>
             </throwableConverter>
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
         </encoder>
     </appender>
 
@@ -28,7 +27,11 @@
     </springProfile>
 
     <springProfile name="local">
-        <include resource="org/springframework/boot/logging/logback/base.xml" />
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%X{correlationId:-–}] %cyan(%-40.40logger{39}) : %msg%n%rEx</pattern>
+            </encoder>
+        </appender>
         <root level="INFO">
             <appender-ref ref="CONSOLE" />
         </root>

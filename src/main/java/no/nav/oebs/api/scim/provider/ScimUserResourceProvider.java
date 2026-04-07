@@ -213,7 +213,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
             PlsqlProcedureResult result = plsqlRepository.executeInOutProcedure(plsqlProcedureName, Operasjon.SLETTE, deleteJson);
             long kalltid = System.currentTimeMillis() - startTid;
             int httpStatus = result.getMessageNumber() < 0 ? 500 : 204;
-            kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id, httpStatus, kalltid, null, null);
+            kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id, httpStatus, kalltid, deleteJson, null, null);
             kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, plsqlProcedureName, httpStatus, kalltid, deleteJson, plsqlResponse(result), result.getMessage());
             checkResult(result, "DELETE", id);
             executeSyncIfPresent("DELETE", id, result);
@@ -223,9 +223,11 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
         } catch (Exception e) {
             long kalltid = System.currentTimeMillis() - startTid;
             log.error("DELETE User FEIL: id={}", id, e);
-            kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id, 500, kalltid, errorJson(500, e.getMessage()), null);
+            String deleteJson = String.format("{\"id\":\"%s\"}", id);
+            kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Users/" + id, 500, kalltid,
+                    deleteJson, errorJson(500, e.getMessage()), null);
             kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, plsqlProcedureName, 500, kalltid,
-                    String.format("{\"id\":\"%s\"}", id), errorJson(500, e.getMessage()), null);
+                    deleteJson, errorJson(500, e.getMessage()), null);
             throw new ResourceException(500, "Intern feil: " + e.getMessage());
         }
     }

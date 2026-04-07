@@ -37,6 +37,12 @@ public class NavOebsExtension implements ScimExtension {
     )
     private Boolean egenansatt;
 
+    @ScimAttribute(
+        description = "Indikerer om brukeren skal få nytt passord",
+        mutability = Schema.Attribute.Mutability.READ_WRITE
+    )
+    private Boolean nyttPassord;
+
     @Override
     public String getUrn() {
         return URN;

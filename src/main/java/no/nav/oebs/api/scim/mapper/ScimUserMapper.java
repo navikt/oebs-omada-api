@@ -84,6 +84,7 @@ public class ScimUserMapper {
         NavOebsExtension navExt = new NavOebsExtension();
         navExt.setFullmakt(entity.getFullmakt());
         navExt.setEgenansatt(entity.isEgenansatt());
+        navExt.setNyttPassord(entity.isNyttPassord());
         user.addExtension(navExt);
 
         // Meta

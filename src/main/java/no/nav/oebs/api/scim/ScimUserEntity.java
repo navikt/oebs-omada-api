@@ -74,6 +74,9 @@ public class ScimUserEntity {
     @Column(name = "EGENANSATT")
     private String egenansattFlag;  // 'Y' dersom bruker_id finnes i XXRTV_SKJERMING_TILGANG flex-verdisettet
 
+    @Column(name = "NYTT_PASSORD")
+    private String nyttPassordFlag;  // 'Y' dersom brukeren skal sette nytt passord ved neste innlogging
+
     // Groups - hentes separat fra V_OMADA_USER_ALL_GROUPS
     @Transient
     private List<ScimGroupMembershipEntity> groups;
@@ -84,6 +87,10 @@ public class ScimUserEntity {
 
     public boolean isEgenansatt() {
         return "Y".equals(egenansattFlag);
+    }
+
+    public boolean isNyttPassord() {
+        return "Y".equals(nyttPassordFlag);
     }
 
     public String getFullName() {

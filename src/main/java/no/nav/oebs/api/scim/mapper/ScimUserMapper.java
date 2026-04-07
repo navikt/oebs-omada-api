@@ -102,28 +102,4 @@ public class ScimUserMapper {
         return user;
     }
 
-    /**
-     * Lager et slim SCIM User-objekt med kun id (navId) og groups.
-     * Brukes av Omada bulk-endepunktet /scim/v2/UserMemberships.
-     */
-    public ScimUser toSlimScimUser(String navId, List<ScimGroupMembershipEntity> groups) {
-        ScimUser user = new ScimUser();
-        user.setId(navId);
-
-        if (groups != null && !groups.isEmpty()) {
-            List<UserGroup> groupMemberships = groups.stream()
-                .map(g -> {
-                    UserGroup ug = new UserGroup();
-                    ug.setValue(g.getScimGroupId());
-                    ug.setDisplay(g.getScimDisplayName());
-                    ug.setRef(baseUrl + "/scim/v2/Groups/" + g.getScimGroupId());
-                    return ug;
-                })
-                .collect(Collectors.toList());
-            user.setGroups(groupMemberships);
-        }
-
-        return user;
-    }
-
 }

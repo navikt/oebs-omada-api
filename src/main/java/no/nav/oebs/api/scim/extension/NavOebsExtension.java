@@ -38,8 +38,8 @@ public class NavOebsExtension implements ScimExtension {
     private Boolean egenansatt;
 
     @ScimAttribute(
-        description = "Indikerer om brukeren skal få nytt passord",
-        mutability = Schema.Attribute.Mutability.READ_WRITE
+        description = "Sett til true for å trigge generering av nytt passord for brukeren i OEBS. Kun skrivbar — returneres aldri i GET-responsen.",
+        mutability = Schema.Attribute.Mutability.WRITE_ONLY
     )
     private Boolean nyttPassord;
 

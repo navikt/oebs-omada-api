@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Entity som mapper til V_OMADA_ACTIVE_USERS view
- * Brukes for å hente brukerdata fra OeBS
+ * Entity som mapper til XXRTV.XXRTV_OMADA_AKTIVE_BRUKERE_V
+ * Brukes for å hente brukerdata fra OeBS (read-only, kun GET-operasjoner).
  */
 @Data
 @Entity
@@ -74,10 +74,6 @@ public class ScimUserEntity {
     @Column(name = "EGENANSATT")
     private String egenansattFlag;  // 'Y' dersom bruker_id finnes i XXRTV_SKJERMING_TILGANG flex-verdisettet
 
-    @Column(name = "NYTT_PASSORD")
-    private String nyttPassordFlag;  // 'Y' dersom brukeren skal sette nytt passord ved neste innlogging
-
-    // Groups - hentes separat fra V_OMADA_USER_ALL_GROUPS
     @Transient
     private List<ScimGroupMembershipEntity> groups;
 
@@ -89,9 +85,6 @@ public class ScimUserEntity {
         return "Y".equals(egenansattFlag);
     }
 
-    public boolean isNyttPassord() {
-        return "Y".equals(nyttPassordFlag);
-    }
 
     public String getFullName() {
         return forNavn + " " + etterNavn;

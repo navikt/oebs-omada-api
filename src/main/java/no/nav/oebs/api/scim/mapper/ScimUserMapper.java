@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Mapper som konverterer ScimUserEntity til Apache SCIMple User objekt
@@ -62,13 +61,13 @@ public class ScimUserMapper {
                     UserGroup gm = new UserGroup();
                     gm.setValue(g.getScimGroupId());
                     gm.setDisplay(g.getScimDisplayName());
-                    // $ref settes kun når vi har en gyldig gruppe-ID — ikke forventet i innkommende meldinger fra Omada
+                    // $ref settes kun når vi har en gyldig gruppe-ID
                     if (g.getScimGroupId() != null) {
                         gm.setRef(baseUrl + "/scim/v2/Groups/" + g.getScimGroupId());
                     }
                     return gm;
                 })
-                .collect(Collectors.toList());
+                .toList();
             user.setGroups(groupMemberships);
         }
 
@@ -84,7 +83,7 @@ public class ScimUserMapper {
         NavOebsExtension navExt = new NavOebsExtension();
         navExt.setFullmakt(entity.getFullmakt());
         navExt.setEgenansatt(entity.isEgenansatt());
-        navExt.setNyttPassord(entity.isNyttPassord());
+        // nyttPassord settes ikke på GET — feltet er WRITE_ONLY og sendes kun inn fra Omada på POST/PUT
         user.addExtension(navExt);
 
         // Meta

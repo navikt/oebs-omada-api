@@ -141,6 +141,7 @@ public class ScimpleConfig {
                 bind(etagGenerator).to(EtagGenerator.class);
                 bind(kallLoggHelper).to(KallLoggHelper.class);
                 bind(validationHandler).to(JwtTokenValidationHandler.class);
+                bind(multiIssuerConfiguration).to(MultiIssuerConfiguration.class);
             }
         });
 

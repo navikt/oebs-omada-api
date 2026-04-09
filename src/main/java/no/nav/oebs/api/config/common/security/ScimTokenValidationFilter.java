@@ -6,9 +6,12 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.Provider;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.scim.KallLoggHelper;
+import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
 import no.nav.security.token.support.core.http.HttpRequest;
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler;
 import org.apache.directory.scim.protocol.data.ErrorResponse;
+import java.time.Instant;
+import java.util.Base64;
 
 /**
  * Jersey ContainerRequestFilter som håndhever token-validering per HTTP-metode og path.
@@ -17,7 +20,7 @@ import org.apache.directory.scim.protocol.data.ErrorResponse;
  * Endepunkt                          | Metode | Krav
  * -----------------------------------|--------|---------------------
  * GET /Schemas, /ResourceTypes, /SPC | GET    | @Unprotected
- * Alt annet (Users og Groups)        | alle   | @Protected
+ * Alt annet (Users og Groups)        | alle   | Gyldig Bearer-token påkrevd
  */
 @Slf4j
 @Provider
@@ -25,13 +28,16 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
 
     private final KallLoggHelper kallLoggHelper;
     private final JwtTokenValidationHandler validationHandler;
+    private final MultiIssuerConfiguration multiIssuerConfiguration;
 
     @Inject
     @SuppressWarnings("CdiInjectionPointsInspection")
     public ScimTokenValidationFilter(KallLoggHelper kallLoggHelper,
-                                     JwtTokenValidationHandler validationHandler) {
+                                     JwtTokenValidationHandler validationHandler,
+                                     MultiIssuerConfiguration multiIssuerConfiguration) {
         this.kallLoggHelper = kallLoggHelper;
         this.validationHandler = validationHandler;
+        this.multiIssuerConfiguration = multiIssuerConfiguration;
     }
 
     @Override
@@ -44,80 +50,121 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
             return;
         }
 
-        // Les Authorization-header direkte fra JAX-RS request og valider via JwtTokenValidationHandler
         String rawAuthHeader = requestContext.getHeaderString("Authorization");
         String authHeader = rawAuthHeader != null ? rawAuthHeader.trim() : null;
 
         log.debug("ScimTokenValidationFilter: validerer {} {} — Authorization: {}",
                 method, path, authHeader == null ? "MANGLER" : "present");
 
-        // Avvis kall som mangler Bearer-prefix — klienten må sende korrekt format
         if (authHeader == null || !authHeader.toLowerCase().startsWith("bearer ")) {
-            String aud = extractAudFromJwt(authHeader);
-            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} — Authorization-header mangler eller har ugyldig format. aud=[{}]",
-                    method, path, aud);
-            ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
-            kallLoggHelper.loggInn(method, "/scim/v2/" + path,
-                    401, 0, null, errorResponse.getDetail());
-            requestContext.abortWith(ErrorResponse.toResponse(errorResponse));
+            String grunn = authHeader == null
+                    ? "Authorization-header mangler"
+                    : "Authorization-header har ugyldig format (forventet 'Bearer <token>')";
+            log.warn("ScimTokenValidationFilter: 401 — {} {} — {}", method, path, grunn);
+            avvis(requestContext, method, path, grunn);
             return;
         }
 
         HttpRequest httpRequest = headerName -> "Authorization".equalsIgnoreCase(headerName) ? authHeader : null;
-
         var tokenContext = validationHandler.getValidatedTokens(httpRequest);
-
-        // Ingen issuers konfigurert → lokal/test-modus uten JWT-validering
-        if (tokenContext.getIssuers().isEmpty()) {
-            log.warn("ScimTokenValidationFilter: ingen issuers konfigurert — passer gjennom uten validering [{} {}]", method, path);
-            return;
-        }
 
         boolean hasValidToken = tokenContext.getIssuers().stream()
                 .anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
 
-        log.info("ScimTokenValidationFilter: tokenContext issuers={} hasValidToken={}",
-                tokenContext.getIssuers(), hasValidToken);
-
         if (!hasValidToken) {
-            String aud = extractAudFromJwt(authHeader);
-            log.warn("ScimTokenValidationFilter: 401 Unauthorized — {} {} [issuers={}, aud={}]",
-                    method, path, tokenContext.getIssuers(), aud);
-            ErrorResponse errorResponse = new ErrorResponse(401, "Token mangler eller er ugyldig");
-            kallLoggHelper.loggInn(method, "/scim/v2/" + path,
-                    401, 0, null, errorResponse.getDetail());
-            requestContext.abortWith(ErrorResponse.toResponse(errorResponse));
+            String grunn = utledUgyldigTokenGrunn(authHeader);
+            log.warn("ScimTokenValidationFilter: 401 — {} {} — {} [konfigurerte issuers={}]",
+                    method, path, grunn, multiIssuerConfiguration.getIssuers().keySet());
+            avvis(requestContext, method, path, grunn);
         }
     }
 
     /**
-     * Trekker ut 'aud'-claim fra JWT payload (base64) for diagnostikk — uten ekstern JWT-parser.
+     * Undersøker JWT-payload og returnerer en menneskelig lesbar grunn til at tokenet er ugyldig.
      */
-    private String extractAudFromJwt(String authHeader) {
+    private String utledUgyldigTokenGrunn(String authHeader) {
         try {
-            if (authHeader == null) return "null";
-            String token = authHeader.toLowerCase().startsWith("bearer ")
-                    ? authHeader.substring(7).trim()
-                    : authHeader.trim();
-            // Fjern eventuell URL-encoding på slutten (f.eks. trailing %)
-            token = token.replaceAll("[^A-Za-z0-9+/=._~-]", "");
+            String token = authHeader.substring(7).trim();
             String[] parts = token.split("\\.");
-            if (parts.length < 2) return "ugyldig-format";
-            String payload = new String(java.util.Base64.getUrlDecoder().decode(
-                    parts[1].length() % 4 == 0 ? parts[1] : parts[1] + "=".repeat(4 - parts[1].length() % 4)));
-            // Enkel regex-extract av aud-claim
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"aud\"\\s*:\\s*[\"\\[]([^\"]*)").matcher(payload);
-            return m.find() ? m.group(1) : "ikke-funnet";
+            if (parts.length < 2) return "Token er ikke et gyldig JWT-format";
+
+            String padded = parts[1];
+            if (padded.length() % 4 != 0) padded += "=".repeat(4 - padded.length() % 4);
+            String payload = new String(Base64.getUrlDecoder().decode(padded));
+
+            // exp-sjekk
+            java.util.regex.Matcher expMatcher = java.util.regex.Pattern
+                    .compile("\"exp\"\\s*:\\s*(\\d+)").matcher(payload);
+            if (expMatcher.find()) {
+                long exp = Long.parseLong(expMatcher.group(1));
+                if (Instant.now().getEpochSecond() > exp) {
+                    return "Token er utløpt (exp=" + Instant.ofEpochSecond(exp) + ")";
+                }
+            } else {
+                return "Token mangler exp-claim";
+            }
+
+            // Hent iss og aud fra token for diagnostikk
+            java.util.regex.Matcher issMatcher = java.util.regex.Pattern
+                    .compile("\"iss\"\\s*:\\s*\"([^\"]+)\"").matcher(payload);
+            String tokenIss = issMatcher.find() ? issMatcher.group(1) : "(mangler)";
+
+            java.util.regex.Matcher audMatcher = java.util.regex.Pattern
+                    .compile("\"aud\"\\s*:\\s*[\"\\[]([^\"]*)").matcher(payload);
+            String tokenAud = audMatcher.find() ? audMatcher.group(1) : "(mangler)";
+
+            // Sjekk iss mot konfigurerte issuers (via metadata)
+            boolean kjentIssuer = multiIssuerConfiguration.getIssuers().values().stream()
+                    .anyMatch(ic -> {
+                        try {
+                            String konfIss = ic.getMetadata().getIssuer().getValue();
+                            return konfIss != null && konfIss.equals(tokenIss);
+                        } catch (Exception e) {
+                            return false;
+                        }
+                    });
+            if (!kjentIssuer) {
+                var konfigurertNavn = multiIssuerConfiguration.getIssuerShortNames();
+                return "Token har ukjent issuer: " + tokenIss
+                        + " (konfigurerte issuers: " + konfigurertNavn + ")";
+            }
+
+            // Sjekk aud mot aksepterte audiences
+            boolean gyldigAud = multiIssuerConfiguration.getIssuers().values().stream()
+                    .anyMatch(ic -> ic.getAcceptedAudience().stream()
+                            .anyMatch(a -> a.equals(tokenAud)));
+            if (!gyldigAud) {
+                var aksepterteAud = multiIssuerConfiguration.getIssuers().values().stream()
+                        .flatMap(ic -> ic.getAcceptedAudience().stream())
+                        .toList();
+                return "Token har feil audience: " + tokenAud
+                        + " (aksepterte audiences: " + aksepterteAud + ")";
+            }
+
+            return "Token er ugyldig — iss=" + tokenIss + ", aud=" + tokenAud;
+
         } catch (Exception e) {
-            return "feil-ved-parsing: " + e.getMessage();
+            return "Token er ugyldig (kunne ikke lese innhold: " + e.getMessage() + ")";
         }
+    }
+
+    private void avvis(ContainerRequestContext requestContext, String method, String path, String grunn) {
+        ErrorResponse errorResponse = new ErrorResponse(401, "Ugyldig token: " + grunn);
+        kallLoggHelper.loggInn(
+                method,
+                "/scim/v2/" + path,
+                401,
+                0,
+                errorResponse.getDetail(),   // response  — svar returnert til Omada
+                grunn);                       // logginfo  — teknisk grunn til at tokenet ble avvist
+        requestContext.abortWith(ErrorResponse.toResponse(errorResponse));
     }
 
     /**
      * Kun SCIM metadata-endepunkter er åpne uten token.
      */
     private boolean isUnprotected(String method, String path) {
-        boolean isGet = method.equals("GET");
+        boolean isGet = "GET".equals(method);
         return isGet && (
                 path.startsWith("Schemas")               || path.startsWith("/Schemas") ||
                 path.startsWith("ResourceTypes")         || path.startsWith("/ResourceTypes") ||

@@ -28,6 +28,8 @@
         <lombok-version>1.18.38</lombok-version>
 
         <!-- CVE-fixes via Spring Boot BOM property overrides -->
+        <!-- CVE-2026-22737, CVE-2026-22735: Spring MVC script view path traversal og SSE stream corruption. Fikset i 7.0.6. -->
+        <spring-framework.version>7.0.6</spring-framework.version>
         <!-- GHSA-72hv-8253-57qq: jackson-core 2.x async parser DoS. Fikset i 2.18.6. -->
         <jackson-2-bom.version>2.18.6</jackson-2-bom.version>
         <!-- CVE-2026-24400: AssertJ XXE via isXmlEqualTo. Fikset i 3.27.7. -->
@@ -43,17 +45,11 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- CVE-2026-29062 / GHSA-72hv-8253-57qq: jackson-core 3.0.x har DoS-sårbarheter.
-                 Overstyrer kun jackson-core til 3.1.0 uten å oppgradere hele Jackson 3 BOM,
-                 da Spring Boot 4.0.0 er bygget mot jackson-databind 3.0.x. -->
             <dependency>
                 <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>3.1.0</version>
+                <version>3.1.1</version>
             </dependency>
-
-            <!-- CVE-2025-11143: Jetty URI-parser differensiell parsing. Fikset i 12.1.5.
-                 CVE-2026-1605: Jetty GzipHandler memory leak / DoS. Fikset i 12.1.6. -->
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>

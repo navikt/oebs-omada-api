@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Entity som mapper til V_OMADA_ACTIVE_USERS view
- * Brukes for å hente brukerdata fra OeBS
+ * Entity som mapper til XXRTV.XXRTV_OMADA_AKTIVE_BRUKERE_V
+ * Brukes for å hente brukerdata fra OeBS (read-only, kun GET-operasjoner).
  */
 @Data
 @Entity
@@ -71,13 +71,20 @@ public class ScimUserEntity {
     @Column(name = "FULLMAKT")
     private String fullmakt;  // per_job_definitions.segment1 - fullmakt-tittel fra per_jobs/per_job_definitions via assignment
 
-    // Groups - hentes separat fra V_OMADA_USER_ALL_GROUPS
+    @Column(name = "EGENANSATT")
+    private String egenansattFlag;  // 'Y' dersom bruker_id finnes i XXRTV_SKJERMING_TILGANG flex-verdisettet
+
     @Transient
     private List<ScimGroupMembershipEntity> groups;
 
     public boolean isActive() {
         return "Y".equals(activeFlag);
     }
+
+    public boolean isEgenansatt() {
+        return "Y".equals(egenansattFlag);
+    }
+
 
     public String getFullName() {
         return forNavn + " " + etterNavn;

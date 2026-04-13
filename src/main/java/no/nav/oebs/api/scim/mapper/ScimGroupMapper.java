@@ -33,9 +33,11 @@ public class ScimGroupMapper {
             List<GroupMembership> scimMembers = members.stream()
                 .map(m -> {
                     GroupMembership member = new GroupMembership();
-                    member.setValue(m.getBrukerId());
-                    member.setDisplay(m.getBrukerId());
-                    member.setRef(baseUrl + "/scim/v2/Users/" + m.getBrukerId());
+                    member.setValue(m.getNavId());
+                    member.setDisplay(m.getNavId());
+                    if (m.getNavId() != null) {
+                        member.setRef(baseUrl + "/scim/v2/Users/" + m.getNavId());
+                    }
                     return member;
                 })
                 .collect(Collectors.toList());

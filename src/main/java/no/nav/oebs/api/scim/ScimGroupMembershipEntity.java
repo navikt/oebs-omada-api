@@ -25,7 +25,7 @@ public class ScimGroupMembershipEntity {
     private String brukerId;
 
     @Column(name = "NAV_ID")
-    private Long navId;
+    private String navId;
 
     @Column(name = "SCIM_DISPLAY_NAME")
     private String scimDisplayName;

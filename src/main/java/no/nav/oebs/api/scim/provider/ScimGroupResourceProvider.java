@@ -1,5 +1,8 @@
 package no.nav.oebs.api.scim.provider;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.nav.oebs.api.db.entity.KallLogg;
@@ -34,6 +37,8 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     private final ScimGroupService groupService;
     private final KallLoggHelper kallLoggHelper;
 
+    private static final ObjectMapper objectMapper = JsonMapper.builder().findAndAddModules().build();
+
     @Override
     public Class<ScimGroup> getResourceClass() {
         return ScimGroup.class;
@@ -50,7 +55,8 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
                 kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 404, kalltid, null, "Group not found");
                 return null;
             }
-            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 200, kalltid, null, null);
+            String responseJson = toJson(group.get());
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 200, kalltid, responseJson, null);
             return group.get();
         } catch (Exception e) {
             long kalltid = System.currentTimeMillis() - startTid;
@@ -113,6 +119,15 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
         kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id, 405, 0,
                 errorJson(405, "Groups er read-only — DELETE ikke støttet"), null);
         throw new ResourceException(405, "Groups er read-only — DELETE ikke støttet");
+    }
+
+    private String toJson(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            log.warn("Kunne ikke serialisere til JSON", e);
+            return null;
+        }
     }
 
     private String errorJson(int status, String detail) {

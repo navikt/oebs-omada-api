@@ -1,5 +1,3 @@
-#TODO: Fikse NAIS.yaml
-#TODO: Endre accessPolicy
 apiVersion: nais.io/v1alpha1
 kind: Application
 
@@ -20,14 +18,21 @@ spec:
   resources:
     requests:
       cpu: 100m
-      memory: 400Mi
+      memory: 512Mi
     limits:
-      memory: 500Mi
+      memory: 1Gi
+
+  env:
+    - name: JDK_JAVA_OPTIONS
+      value: "-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=40.0 -XX:MaxMetaspaceSize=200m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof"
 
   azure:
     application:
       enabled: true
-      allowAllUsers: true
+      accessPolicy:
+        inbound:
+          rules:
+
       tenant: nav.no
   envFrom:
     - secret: oebs-omada-prod

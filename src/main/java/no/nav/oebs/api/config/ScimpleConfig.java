@@ -7,6 +7,7 @@ import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler;
 import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import no.nav.oebs.api.config.common.security.ScimTokenValidationFilter;
+import no.nav.oebs.api.config.common.logging.RawRequestLoggingFilter;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import org.apache.directory.scim.core.repository.DefaultPatchHandler;
 import org.apache.directory.scim.core.repository.PatchHandler;
@@ -47,8 +48,9 @@ public class ScimpleConfig {
     @PostConstruct
     public void logScimEndpoints() {
         log.info("╔══════════════════════════════════════════════════════╗");
-        log.info("║         SCIM 2.0 API Endpoints (via SCIMple)         ║");
+        log.info("║           Registrerte API-endepunkter                ║");
         log.info("╠══════════════════════════════════════════════════════╣");
+        log.info("║ — Standard SCIM 2.0 —————————————————————————————————║");
         log.info("║ GET    /scim/v2/Users                                ║");
         log.info("║ GET    /scim/v2/Users/{id}                           ║");
         log.info("║ POST   /scim/v2/Users                                ║");
@@ -126,6 +128,7 @@ public class ScimpleConfig {
         });
 
         config.register(ScimTokenValidationFilter.class);
+        config.register(RawRequestLoggingFilter.class);
 
         config.register(new AbstractBinder() {
             @Override
@@ -138,6 +141,7 @@ public class ScimpleConfig {
                 bind(etagGenerator).to(EtagGenerator.class);
                 bind(kallLoggHelper).to(KallLoggHelper.class);
                 bind(validationHandler).to(JwtTokenValidationHandler.class);
+                bind(multiIssuerConfiguration).to(MultiIssuerConfiguration.class);
             }
         });
 

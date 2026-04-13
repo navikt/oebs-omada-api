@@ -11,15 +11,21 @@ APP_NAME: ${APP_NAME:oebs-omada-api}
 oebs:
   scim:
     base-url: ${SCIM_BASE_URL}
+    sync-enabled: ${SCIM_SYNC_ENABLED:true}
   plsql:
     insert-procedure: ${PLSQL_INSERT_PROCEDURE:APPS.XXRTV_INT_OMADA_INSERT_MESSAGE.InsertOmadaMessage}
+    sync-procedure: ${PLSQL_SYNC_PROCEDURE:APPS.XXRTV_OMADA_JSON_IDENT_PKG.start_import_ident_melding}
     org-id: ${PLSQL_ORG_ID:0}
+  kalllogg:
+    retention-days: ${KALLLOGG_RETENTION_DAYS:30}
+    # Cron-uttrykk for opprydding — standard kl. 02:00 hver natt
+    cleanup-cron: ${KALLLOGG_CLEANUP_CRON:0 0 2 * * *}
 
 no.nav.security.jwt:
    issuer:
      azure:
-       accepted_audience: ${AZURE_ACCEPTED_AUDIENCE}
-       discovery-url: ${AZURE_DISCOVERY_URL}
+       accepted_audience: ${AZURE_ACCEPTED_AUDIENCE:no-audience}
+       discovery-url: ${AZURE_DISCOVERY_URL:https://not-configured.invalid}
 
 spring:
   profiles:
@@ -32,7 +38,14 @@ spring:
     username: ${APPS_USER}
     password: ${APPS_PASSWORD}
     url: ${DB_URL}
+    hikari:
+      connection-init-sql: >
+        ALTER SESSION SET
+          NLS_LANGUAGE    = 'NORWEGIAN'
+          NLS_TERRITORY   = 'NORWAY'
+          NLS_DATE_FORMAT = 'YYYY-MM-DD'
   jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
     hibernate:
       ddl-auto: none
     show-sql: false
@@ -51,3 +64,8 @@ springdoc:
   swagger-ui:
     disable-swagger-default-url: true
     tags-sorter: alpha
+
+logging:
+  level:
+    no.nav.security.token.support: DEBUG
+    no.nav.security.jwt: DEBUG

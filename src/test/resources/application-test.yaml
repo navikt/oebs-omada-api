@@ -24,3 +24,9 @@ oebs:
   scim:
     base-url: http://localhost:8080
 
+no.nav.security.jwt:
+  issuer:
+    azure:
+      discovery-url: https://dummy-test-issuer.invalid/.well-known/openid-configuration
+      accepted_audience: test-audience
+

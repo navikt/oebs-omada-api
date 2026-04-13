@@ -44,16 +44,19 @@ public class ScimUserService {
             return Optional.empty();
         }
 
-        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByBrukerId(userEntity.get().getBrukerId());
-        ScimUser scimUser = userMapper.toScimUser(userEntity.get(), groups);
+        ScimUserEntity entity = userEntity.get();
+        List<ScimGroupMembershipEntity> groups = groupMembershipRepository.findByNavId(entity.getNavId());
+        ScimUser scimUser = userMapper.toScimUser(entity, groups);
 
-        log.debug("Bruker funnet: navId={}, brukerId={}, grupper={}", id, userEntity.get().getBrukerId(), groups.size());
+        log.debug("Bruker funnet: navId={}, brukerId={}, grupper={}, egenansatt={}",
+                id, entity.getBrukerId(), groups.size(), entity.isEgenansatt());
         return Optional.of(scimUser);
     }
 
     /**
      * Hent alle aktive brukere (paginert)
      */
+    @SuppressWarnings("NullableProblems")
     public Page<ScimUser> getUsers(int startIndex, int count) {
         log.debug("Henter brukere: startIndex={}, count={}", startIndex, count);
 

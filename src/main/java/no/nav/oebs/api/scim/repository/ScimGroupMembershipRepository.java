@@ -25,14 +25,19 @@ public interface ScimGroupMembershipRepository extends JpaRepository<ScimGroupMe
     List<ScimGroupMembershipEntity> findByScimGroupId(String scimGroupId);
 
     /**
-     * Hent kun grupper (G$) for en bruker
+     * Hent alle grupper og ansvarsområder for en bruker via navId
      */
-    @Query("SELECT g FROM ScimGroupMembershipEntity g WHERE g.brukerId = :brukerId AND g.groupType = 'GROUP'")
-    List<ScimGroupMembershipEntity> findGroupsByBrukerId(@Param("brukerId") String brukerId);
+    List<ScimGroupMembershipEntity> findByNavId(String navId);
 
     /**
-     * Hent kun ansvarsområder (A$) for en bruker
+     * Hent alle grupper for en bruker via navId
      */
-    @Query("SELECT g FROM ScimGroupMembershipEntity g WHERE g.brukerId = :brukerId AND g.groupType = 'RESPONSIBILITY'")
-    List<ScimGroupMembershipEntity> findResponsibilitiesByBrukerId(@Param("brukerId") String brukerId);
+    @Query("SELECT g FROM ScimGroupMembershipEntity g WHERE g.navId = :navId AND g.groupType = 'GROUP'")
+    List<ScimGroupMembershipEntity> findGroupsByNavId(@Param("navId") String navId);
+
+    /**
+     * Hent kun ansvarsområder (A$) for en bruker via navId
+     */
+    @Query("SELECT g FROM ScimGroupMembershipEntity g WHERE g.navId = :navId AND g.groupType = 'RESPONSIBILITY'")
+    List<ScimGroupMembershipEntity> findResponsibilitiesByNavId(@Param("navId") String navId);
 }

@@ -6,6 +6,7 @@ import no.nav.security.token.support.spring.api.EnableJwtTokenValidation;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 /**
  * Sikkerhetskonfigurasjon.
@@ -18,7 +19,9 @@ import org.springframework.context.annotation.Configuration;
  *   - @Protected / @Unprotected annoteres direkte på SCIMple provider-klassene
  * Spring MVC-endepunkter beskyttes via @EnableJwtTokenValidation som vanlig.
  */
+
 @Configuration
+@Profile("!local")
 @EnableJwtTokenValidation(ignore = { "org.springframework", "org.springdoc" })
 public class SecurityConfig {
 

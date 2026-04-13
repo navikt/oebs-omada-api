@@ -16,42 +16,45 @@ import lombok.ToString;
 public class PlsqlProcedureResult {
 
 	private String data;
-
 	private Integer messageNumber;
-
 	private String message;
+	private Long interfaceMsgId;
+	private String retcode;
+	private String devPhase;
+	private String devStatus;
 
-	public PlsqlProcedureResult(String data, Integer messageNumber, String message) {
-		this.data = data;
-		this.messageNumber = messageNumber != null ? messageNumber : Integer.valueOf(PlsqlMessageCodes.OK);
-		this.message = message;
+
+	public PlsqlProcedureResult(String data, Integer messageNumber, String message, Long interfaceMsgId, String retcode) {
+		this(data, messageNumber, message, interfaceMsgId, retcode, null, null);
 	}
 
-	public PlsqlProcedureResult(String errbuf, String retcode) {
-		this.message = errbuf;
-		this.data = retcode;
-		try {
-			this.messageNumber = retcode != null ? Integer.parseInt(retcode.trim()) : PlsqlMessageCodes.OK;
-		} catch (NumberFormatException e) {
-			this.messageNumber = PlsqlMessageCodes.OK;
-		}
+	public PlsqlProcedureResult(String data, Integer messageNumber, String message, Long interfaceMsgId, String retcode,
+								String devPhase, String devStatus) {
+		this.data           = data;
+		this.messageNumber  = messageNumber != null ? messageNumber : PlsqlMessageCodes.OK;
+		this.message        = message;
+		this.interfaceMsgId = interfaceMsgId;
+		this.retcode        = retcode;
+		this.devPhase       = devPhase;
+		this.devStatus      = devStatus;
 	}
 
-	public PlsqlProcedureResult(Clob clob, BigDecimal messageNumber, String message) {
+	public PlsqlProcedureResult(Clob clob, BigDecimal messageNumber, String message, Long interfaceMsgId, String retcode) {
+		this(clob, messageNumber, message, interfaceMsgId, retcode, null, null);
+	}
+
+	public PlsqlProcedureResult(Clob clob, BigDecimal messageNumber, String message, Long interfaceMsgId, String retcode,
+								String devPhase, String devStatus) {
 		try {
-			this.data = clob != null ? clob.getSubString(1, (int) clob.length()) : null;
-			this.messageNumber = messageNumber != null ? messageNumber.intValue() : Integer.valueOf(PlsqlMessageCodes.OK);
-			this.message = message;
+			this.data           = clob != null ? clob.getSubString(1, (int) clob.length()) : null;
+			this.messageNumber  = messageNumber != null ? messageNumber.intValue() : PlsqlMessageCodes.OK;
+			this.message        = message;
+			this.interfaceMsgId = interfaceMsgId;
+			this.retcode        = retcode;
+			this.devPhase       = devPhase;
+			this.devStatus      = devStatus;
 		} catch (SQLException e) {
 			throw new DataRetrievalFailureException("Feil ved lesing av clob-verdi", e);
 		}
-	}
-
-	public static Integer resolveMessageNumber(PlsqlProcedureResult result) {
-		return result != null ? result.getMessageNumber() : Integer.valueOf(PlsqlMessageCodes.OK);
-	}
-
-	public static String resolveMessage(PlsqlProcedureResult result) {
-		return result != null ? result.getMessage() : null;
 	}
 }

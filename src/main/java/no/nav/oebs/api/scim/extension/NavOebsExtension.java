@@ -16,8 +16,7 @@ import java.io.Serial;
 @ScimExtensionType(
     id = NavOebsExtension.URN,
     name = "NavOebsExtension",
-    description = "NAV OeBS-spesifikke brukerattributter",
-    required = false
+    description = "NAV OeBS-spesifikke brukerattributter"
 )
 public class NavOebsExtension implements ScimExtension {
 
@@ -31,6 +30,18 @@ public class NavOebsExtension implements ScimExtension {
         mutability = Schema.Attribute.Mutability.READ_WRITE
     )
     private String fullmakt;
+
+    @ScimAttribute(
+        description = "Indikerer om brukeren skal ha skjermet-tilgang for behandling av egenansatte",
+        mutability = Schema.Attribute.Mutability.READ_ONLY
+    )
+    private Boolean egenansatt;
+
+    @ScimAttribute(
+        description = "Sett til true for å trigge generering av nytt passord for brukeren i OEBS. Kun skrivbar — returneres aldri i GET-responsen.",
+        mutability = Schema.Attribute.Mutability.WRITE_ONLY
+    )
+    private Boolean nyttPassord;
 
     @Override
     public String getUrn() {

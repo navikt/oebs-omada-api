@@ -58,7 +58,7 @@ management:
         include: health, info, prometheus, metrics
 
 springdoc:
-  packagesToScan: no.nav.oebs.api.controller
+  packagesToScan: no.nav.oebs.api
   override-with-generic-response: false
   remove-broken-reference-definitions: false
   swagger-ui:

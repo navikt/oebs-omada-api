@@ -63,6 +63,7 @@ springdoc:
   remove-broken-reference-definitions: false
   swagger-ui:
     disable-swagger-default-url: true
+    url: /v3/api-docs
     tags-sorter: alpha
 
 logging:

@@ -244,8 +244,22 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
 
         log.info("{} User: interfaceMsgId={} – kaller synkron prosedyre", operasjon, result.getInterfaceMsgId());
         long syncStart = System.currentTimeMillis();
-        PlsqlProcedureResult syncResult = plsqlRepository.executeSyncProcedure(
-                plsqlSyncProcedureName, result.getInterfaceMsgId());
+
+        PlsqlProcedureResult syncResult;
+        try {
+            syncResult = plsqlRepository.executeSyncProcedure(
+                    plsqlSyncProcedureName, result.getInterfaceMsgId());
+        } catch (Exception e) {
+            long syncKalltid = System.currentTimeMillis() - syncStart;
+            log.error("{} User SYNC FEIL: id={}, interfaceMsgId={}", operasjon, id, result.getInterfaceMsgId(), e);
+            // Log with interfaceMsgId in request so it is always traceable in KallLogg even on failure
+            kallLoggHelper.loggUt(KallLogg.METHOD_POST, plsqlSyncProcedureName, 500, syncKalltid,
+                    String.valueOf(result.getInterfaceMsgId()),
+                    errorJson(500, e.getMessage()),
+                    "interfaceMsgId=" + result.getInterfaceMsgId());
+            throw new ResourceException(500, "Intern feil: " + e.getMessage());
+        }
+
         long syncKalltid = System.currentTimeMillis() - syncStart;
 
         boolean pending = isSyncPending(syncResult);

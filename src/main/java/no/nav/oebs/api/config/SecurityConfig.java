@@ -7,6 +7,9 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Sikkerhetskonfigurasjon.
@@ -33,5 +36,29 @@ public class SecurityConfig {
         registration.addUrlPatterns("/scim/v2/*");
         registration.setOrder(1);
         return registration;
+    }
+
+    /**
+     * Explicitly permits only known public paths (Swagger UI, webjars, OpenAPI docs, actuator health).
+     * All other requests require authentication, preventing ResourceHttpRequestHandler from
+     * exposing static resources without protection.
+     */
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/webjars/**",
+                    "/v3/api-docs/**",
+                    "/v3/api-docs",
+                    "/actuator/health",
+                    "/actuator/info"
+                ).permitAll()
+                .anyRequest().authenticated()
+            );
+        return http.build();
     }
 }

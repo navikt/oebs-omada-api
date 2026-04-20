@@ -48,14 +48,23 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                // SCIM-endepunkter beskyttes av JaxrsJwtTokenValidationFilter (servlet-filter) og
+                // JwtTokenContainerRequestFilter (Jersey) — Spring Security skal ikke interferere her.
+                .requestMatchers("/scim/v2/**").permitAll()
+                // Swagger UI / OpenAPI-dokumentasjon — åpent
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/webjars/**",
                     "/v3/api-docs/**",
-                    "/v3/api-docs",
+                    "/v3/api-docs"
+                ).permitAll()
+                // Actuator — åpne helse- og metrikk-endepunkter
+                .requestMatchers(
                     "/actuator/health",
-                    "/actuator/info"
+                    "/actuator/health/**",
+                    "/actuator/info",
+                    "/actuator/prometheus"
                 ).permitAll()
                 .anyRequest().authenticated()
             );

@@ -19,13 +19,10 @@ spec:
 
   resources:
     requests:
-      cpu: 150m
-      memory: 960Mi
+      cpu: 50m
+      memory: 864Mi
     limits:
-      memory: 1536Mi
-  env:
-    - name: JDK_JAVA_OPTIONS
-      value: "-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=40.0 -XX:MaxMetaspaceSize=200m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof"
+      memory: 928Mi
   azure:
     application:
       enabled: true

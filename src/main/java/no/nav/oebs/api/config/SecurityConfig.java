@@ -4,6 +4,7 @@ import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
 import no.nav.security.token.support.jaxrs.servlet.JaxrsJwtTokenValidationFilter;
 import no.nav.security.token.support.spring.api.EnableJwtTokenValidation;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -26,6 +27,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @Profile("!local")
 @EnableJwtTokenValidation(ignore = { "org.springframework", "org.springdoc" })
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SecurityConfig {
 
     @Bean
@@ -61,6 +63,8 @@ public class SecurityConfig {
                 ).permitAll()
                 // Actuator — åpne helse- og metrikk-endepunkter
                 .requestMatchers(
+                    "/internal/isready",
+                    "/internal/isalive",
                     "/actuator/health",
                     "/actuator/health/**",
                     "/actuator/info",

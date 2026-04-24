@@ -6,6 +6,9 @@ metadata:
   labels:
     app: oebs-omada-api-q1
     team: team-oebs
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
 spec:
   image: {{ image }}
   port: 8080

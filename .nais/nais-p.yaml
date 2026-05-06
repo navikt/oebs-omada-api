@@ -19,6 +19,10 @@ spec:
   replicas:
     min: 3
     max: 3
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
 
   resources:
     requests:

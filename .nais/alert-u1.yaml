@@ -31,6 +31,28 @@ spec:
             namespace: team-oebs
             severity: warning
 
+        - alert: OebsOmadaApiU1SelftestFailed
+          expr: selftests_aggregate_result_status{namespace="team-oebs", app="oebs-omada-api-u1"} > 0
+          for: 2m
+          annotations:
+            summary: "oebs-omada-api-u1 har feil i selftest"
+            consequence: "En eller flere interne avhengigheter feiler i testmiljo"
+            action: "Sjekk selftest-endepunkt, avhengigheter og applikasjonslogger"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1AlertPipelineTest
+          expr: vector(1)
+          for: 1m
+          annotations:
+            summary: "Testalert for oebs-omada-api-u1"
+            consequence: "Verifiserer at alert-kjeden til Slack fungerer"
+            action: "Ingen tiltak; fjern regelen etter bekreftet varsel"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
         - alert: OebsOmadaApiU1HighErrorRate
           expr: |
             (

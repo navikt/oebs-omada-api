@@ -42,17 +42,6 @@ spec:
             namespace: team-oebs
             severity: warning
 
-        - alert: OebsOmadaApiU1AlertPipelineTest
-          expr: vector(1)
-          for: 1m
-          annotations:
-            summary: "Testalert for oebs-omada-api-u1"
-            consequence: "Verifiserer at alert-kjeden til Slack fungerer"
-            action: "Ingen tiltak; fjern regelen etter bekreftet varsel"
-          labels:
-            namespace: team-oebs
-            severity: warning
-
         - alert: OebsOmadaApiU1HighErrorRate
           expr: |
             (

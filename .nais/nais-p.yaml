@@ -37,6 +37,11 @@ spec:
       enabled: true
 
       tenant: nav.no
+  env:
+    - name: SPRINGDOC_API_DOCS_ENABLED
+      value: "false"
+    - name: SPRINGDOC_SWAGGER_UI_ENABLED
+      value: "false"
   envFrom:
     - secret: oebs-omada-prod
 

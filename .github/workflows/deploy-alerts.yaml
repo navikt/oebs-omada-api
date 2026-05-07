@@ -1,0 +1,43 @@
+name: Deploy alerts to NAIS for Mulighetsrommet-api
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - oebs-omada-api/.nais/alerts-api.yaml
+      - .github/workflows/deploy-alerts.yaml
+  workflow_dispatch:
+      inputs:
+        environment:
+          type: choice
+          description: Environment
+          required: true
+          default: prod
+          options:
+            - prod
+
+jobs:
+  apply-alerts:
+    name: Apply alerts to cluster
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: deploy to u1
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: dev-fss
+          RESOURCE: oebs-omada-api/.nais/alerts-u1.yaml
+      - name: deploy to q1
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: dev-fss
+          RESOURCE: oebs-omada-api/.nais/alerts-q1.yaml
+      - name: deploy to prod
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: prod-fss
+          RESOURCE: oebs-omada-api/.nais/alerts-p.yaml

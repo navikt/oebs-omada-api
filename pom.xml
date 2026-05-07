@@ -22,7 +22,7 @@
         <surefire.coverage.argLine/>
 
         <!-- NAV artifacts -->
-        <token-validation.version>6.0.3</token-validation.version>
+        <token-validation.version>6.0.7</token-validation.version>
         <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
         <springdoc-openapi.version>2.7.0</springdoc-openapi.version>
         <lombok-version>1.18.38</lombok-version>
@@ -246,7 +246,7 @@
         <dependency>
             <groupId>no.nav.security</groupId>
             <artifactId>mock-oauth2-server</artifactId>
-            <version>2.1.10</version>
+            <version>2.3.0</version>
             <scope>test</scope>
         </dependency>
 

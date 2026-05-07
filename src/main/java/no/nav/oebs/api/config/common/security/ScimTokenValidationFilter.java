@@ -26,6 +26,8 @@ import java.util.Base64;
 @Provider
 public class ScimTokenValidationFilter implements ContainerRequestFilter {
 
+    private static final String GENERISK_AUTH_FEIL = "Ugyldig eller manglende token";
+
     private final KallLoggHelper kallLoggHelper;
     private final JwtTokenValidationHandler validationHandler;
     private final MultiIssuerConfiguration multiIssuerConfiguration;
@@ -44,9 +46,11 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         String method = requestContext.getMethod().toUpperCase();
         String path   = requestContext.getUriInfo().getPath();
+        String safeMethod = sanitizeForLog(method);
+        String safePath = sanitizeForLog(path);
 
         if (isUnprotected(method, path)) {
-            log.debug("ScimTokenValidationFilter: @Unprotected — {} {}", method, path);
+            log.debug("ScimTokenValidationFilter: @Unprotected — {} {}", safeMethod, safePath);
             return;
         }
 
@@ -54,14 +58,14 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         String authHeader = rawAuthHeader != null ? rawAuthHeader.trim() : null;
 
         log.debug("ScimTokenValidationFilter: validerer {} {} — Authorization: {}",
-                method, path, authHeader == null ? "MANGLER" : "present");
+                safeMethod, safePath, authHeader == null ? "MANGLER" : "present");
 
         if (authHeader == null || !authHeader.toLowerCase().startsWith("bearer ")) {
-            String grunn = authHeader == null
+            String reason = authHeader == null
                     ? "Authorization-header mangler"
                     : "Authorization-header har ugyldig format (forventet 'Bearer <token>')";
-            log.warn("ScimTokenValidationFilter: 401 — {} {} — {}", method, path, grunn);
-            avvis(requestContext, method, path, grunn);
+            log.warn("ScimTokenValidationFilter: 401 — {} {} — {}", safeMethod, safePath, reason);
+            avvis(requestContext, method, path, reason);
             return;
         }
 
@@ -72,10 +76,10 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
                 .anyMatch(issuer -> tokenContext.getJwtToken(issuer) != null);
 
         if (!hasValidToken) {
-            String grunn = utledUgyldigTokenGrunn(authHeader);
+            String reason = utledUgyldigTokenGrunn(authHeader);
             log.warn("ScimTokenValidationFilter: 401 — {} {} — ugyldig token [konfigurerte issuers={}]",
-                    method, path, multiIssuerConfiguration.getIssuers().keySet());
-            avvis(requestContext, method, path, grunn);
+                    safeMethod, safePath, multiIssuerConfiguration.getIssuers().keySet());
+            avvis(requestContext, method, path, reason);
         }
     }
 
@@ -148,16 +152,40 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         }
     }
 
-    private void avvis(ContainerRequestContext requestContext, String method, String path, String grunn) {
-        ErrorResponse errorResponse = new ErrorResponse(401, "Ugyldig token: " + grunn);
+    private void avvis(ContainerRequestContext requestContext, String method, String path, String reason) {
+        String reasonCode = klassifiserAvvisningsgrunn(reason);
+        ErrorResponse errorResponse = new ErrorResponse(401, GENERISK_AUTH_FEIL);
+        String internLogginfo = "reasonCode=" + reasonCode + ", detail=" + reason;
+        log.warn("ScimTokenValidationFilter: 401 — {} {} — reasonCode={}",
+                sanitizeForLog(method), sanitizeForLog(path), reasonCode);
         kallLoggHelper.loggInn(
                 method,
                 "/scim/v2/" + path,
                 401,
                 0,
                 errorResponse.getDetail(),   // response  — svar returnert til Omada
-                grunn);                       // logginfo  — teknisk grunn til at tokenet ble avvist
+                internLogginfo);              // logginfo  — teknisk grunn til at tokenet ble avvist
         requestContext.abortWith(ErrorResponse.toResponse(errorResponse));
+    }
+
+    private String sanitizeForLog(String value) {
+        if (value == null) return null;
+        return value
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
+    }
+
+    private String klassifiserAvvisningsgrunn(String reason) {
+        if (reason == null || reason.isBlank()) return "UNKNOWN";
+        if (reason.startsWith("Authorization-header mangler")) return "MISSING_AUTH_HEADER";
+        if (reason.contains("ugyldig format")) return "INVALID_AUTH_HEADER_FORMAT";
+        if (reason.startsWith("Token er ikke et gyldig JWT-format")) return "INVALID_JWT_FORMAT";
+        if (reason.startsWith("Token er utløpt")) return "TOKEN_EXPIRED";
+        if (reason.startsWith("Token mangler exp-claim")) return "MISSING_EXP";
+        if (reason.startsWith("Token har ukjent issuer")) return "UNKNOWN_ISSUER";
+        if (reason.startsWith("Token har feil audience")) return "INVALID_AUDIENCE";
+        return "INVALID_TOKEN";
     }
 
     /**

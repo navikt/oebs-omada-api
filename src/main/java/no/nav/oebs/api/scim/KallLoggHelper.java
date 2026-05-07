@@ -56,10 +56,16 @@ public class KallLoggHelper {
     private void save(String retning, String type, String method, String operation, int status,
                       long kalltid, String request, String response, String logginfo) {
         String korrelasjonId = MdcOperations.get(MdcOperations.MDC_CORRELATION_ID);
+        String safeMethod = sanitizeForLog(method);
+        String safeOperation = sanitizeForLog(operation);
+        String safeKorrelasjonId = sanitizeForLog(korrelasjonId);
+        String safeRequest = sanitizeForLog(truncate(request));
+        String safeResponse = sanitizeForLog(truncate(response));
+        String safeLogginfo = sanitizeForLog(truncate(logginfo));
 
         log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={} response={} logginfo={}",
-                retning, type, method, operation, status, kalltid, korrelasjonId,
-                truncate(request), truncate(response), logginfo);
+                retning, type, safeMethod, safeOperation, status, kalltid, safeKorrelasjonId,
+                safeRequest, safeResponse, safeLogginfo);
 
         KallLogg kallLogg = KallLogg.builder()
                 .korrelasjonId(korrelasjonId)
@@ -85,5 +91,13 @@ public class KallLoggHelper {
     private String truncate(String value) {
         if (value == null) return null;
         return value.length() > 500 ? value.substring(0, 500) + "...[trunkert]" : value;
+    }
+
+    private String sanitizeForLog(String value) {
+        if (value == null) return null;
+        return value
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
     }
 }

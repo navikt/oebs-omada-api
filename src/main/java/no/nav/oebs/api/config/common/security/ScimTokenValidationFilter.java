@@ -73,8 +73,8 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
 
         if (!hasValidToken) {
             String grunn = utledUgyldigTokenGrunn(authHeader);
-            log.warn("ScimTokenValidationFilter: 401 — {} {} — {} [konfigurerte issuers={}]",
-                    method, path, grunn, multiIssuerConfiguration.getIssuers().keySet());
+            log.warn("ScimTokenValidationFilter: 401 — {} {} — ugyldig token [konfigurerte issuers={}]",
+                    method, path, multiIssuerConfiguration.getIssuers().keySet());
             avvis(requestContext, method, path, grunn);
         }
     }

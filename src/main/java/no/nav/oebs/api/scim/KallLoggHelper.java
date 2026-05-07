@@ -57,9 +57,12 @@ public class KallLoggHelper {
                       long kalltid, String request, String response, String logginfo) {
         String korrelasjonId = MdcOperations.get(MdcOperations.MDC_CORRELATION_ID);
 
-        log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={} response={} logginfo={}",
+        log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} requestPresent={} responsePresent={} logginfoPresent={} requestLength={} responseLength={} logginfoLength={}",
                 retning, type, method, operation, status, kalltid, korrelasjonId,
-                truncate(request), truncate(response), logginfo);
+                request != null, response != null, logginfo != null,
+                request == null ? 0 : request.length(),
+                response == null ? 0 : response.length(),
+                logginfo == null ? 0 : logginfo.length());
 
         KallLogg kallLogg = KallLogg.builder()
                 .korrelasjonId(korrelasjonId)
@@ -82,8 +85,4 @@ public class KallLoggHelper {
         }
     }
 
-    private String truncate(String value) {
-        if (value == null) return null;
-        return value.length() > 500 ? value.substring(0, 500) + "...[trunkert]" : value;
-    }
 }

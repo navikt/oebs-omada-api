@@ -39,12 +39,21 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             }
             MdcOperations.put(MdcOperations.MDC_CORRELATION_ID, korrelasjonId);
             response.setHeader(CORRELATION_ID_HEADER, korrelasjonId);
-            log.debug("Korrelasjons-ID satt: {}", korrelasjonId);
+            log.debug("Korrelasjons-ID satt: {}", sanitizeForLog(korrelasjonId));
 
             filterChain.doFilter(request, response);
         } finally {
             MdcOperations.remove(MdcOperations.MDC_CORRELATION_ID);
         }
+    }
+
+    private String sanitizeForLog(String value) {
+        if (value == null) return null;
+        return value
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replaceAll("\\p{Cntrl}", "_");
     }
 }
 

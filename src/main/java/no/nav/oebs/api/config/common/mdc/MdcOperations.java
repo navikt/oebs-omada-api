@@ -23,7 +23,7 @@ public class MdcOperations {
 	public static void put(String key, String value) {
 		MDC.put(key, value);
 
-		log.debug("Setter MDC-verdi {}={}", key, value);
+		log.debug("Setter MDC-verdi {}={}", sanitizeForLog(key), sanitizeForLog(value));
 	}
 
 	public static void remove(String key) {
@@ -48,5 +48,14 @@ public class MdcOperations {
 
 	private static long getSystemTime() {
 		return System.currentTimeMillis();
+	}
+
+	private static String sanitizeForLog(String value) {
+		if (value == null) return null;
+		return value
+				.replace("\r", "\\r")
+				.replace("\n", "\\n")
+				.replace("\t", "\\t")
+				.replaceAll("\\p{Cntrl}", "_");
 	}
 }

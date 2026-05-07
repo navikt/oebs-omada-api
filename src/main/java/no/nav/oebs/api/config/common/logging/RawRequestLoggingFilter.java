@@ -30,10 +30,14 @@ public class RawRequestLoggingFilter implements ContainerRequestFilter {
             bodyStr = bodyStr.substring(0, MAX_BODY_LENGTH) + "... [avkortet]";
         }
 
+        String safeMethod = sanitizeForLog(method);
+        String safePath = sanitizeForLog(ctx.getUriInfo().getRequestUri().getPath());
+        String safeBody = sanitizeForLog(bodyStr);
+
         log.info("[RåRequest] {} {} råBody={}",
-                method,
-                ctx.getUriInfo().getRequestUri().getPath(),
-                bodyStr);
+                safeMethod,
+                safePath,
+                safeBody);
 
         // Sett streamen tilbake så SCIMple kan lese den
         ctx.setEntityStream(new ByteArrayInputStream(body));
@@ -43,6 +47,15 @@ public class RawRequestLoggingFilter implements ContainerRequestFilter {
         return "POST".equalsIgnoreCase(method)
             || "PUT".equalsIgnoreCase(method)
             || "PATCH".equalsIgnoreCase(method);
+    }
+
+    private String sanitizeForLog(String value) {
+        if (value == null) return null;
+        return value
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replaceAll("\\p{Cntrl}", "_");
     }
 }
 

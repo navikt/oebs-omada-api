@@ -63,9 +63,13 @@ public class KallLoggHelper {
         String safeResponse = sanitizeForLog(truncate(response));
         String safeLogginfo = sanitizeForLog(truncate(logginfo));
 
-        log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={} response={} logginfo={}",
-                retning, type, safeMethod, safeOperation, status, kalltid, safeKorrelasjonId,
-                safeRequest, safeResponse, safeLogginfo);
+        log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} requestPresent={} responsePresent={} logginfoPresent={} requestLength={} responseLength={} logginfoLength={}",
+          retning, type, safeMethod, safeOperation, status, kalltid, safeKorrelasjonId,
+          request != null, response != null, logginfo != null,
+          request == null ? 0 : request.length(),
+          response == null ? 0 : response.length(),
+          logginfo == null ? 0 : logginfo.length());
+        
 
         KallLogg kallLogg = KallLogg.builder()
                 .korrelasjonId(korrelasjonId)
@@ -86,11 +90,6 @@ public class KallLoggHelper {
         } catch (Exception e) {
             log.error("Feil ved logging av kalloggdata til databasen; feilmelding=" + e.getMessage(), e);
         }
-    }
-
-    private String truncate(String value) {
-        if (value == null) return null;
-        return value.length() > 500 ? value.substring(0, 500) + "...[trunkert]" : value;
     }
 
     private String sanitizeForLog(String value) {

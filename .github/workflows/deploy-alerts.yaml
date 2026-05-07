@@ -1,10 +1,14 @@
-name: Deploy alerts to NAIS for Mulighetsrommet-api
+name: Deploy alerts to NAIS for oebs-omada-api
 on:
   push:
     branches:
+      - dev/u1
+      - dev/q1
       - main
     paths:
-      - oebs-omada-api/.nais/alerts-api.yaml
+      - .nais/alert-u1.yaml
+      - .nais/alert-q1.yaml
+      - .nais/alert-p.yaml
       - .github/workflows/deploy-alerts.yaml
   workflow_dispatch:
       inputs:
@@ -12,8 +16,10 @@ on:
           type: choice
           description: Environment
           required: true
-          default: prod
+          default: u1
           options:
+            - u1
+            - q1
             - prod
 
 jobs:
@@ -23,21 +29,52 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed alert files
+        id: changed
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          base="${{ github.event.before }}"
+          if [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          changed_files="$(git diff --name-only "$base" "${{ github.sha }}")"
+          echo "$changed_files"
+
+          u1=false
+          q1=false
+          prod=false
+
+          echo "$changed_files" | grep -qx '.nais/alert-u1.yaml' && u1=true || true
+          echo "$changed_files" | grep -qx '.nais/alert-q1.yaml' && q1=true || true
+          echo "$changed_files" | grep -qx '.nais/alert-p.yaml' && prod=true || true
+
+          echo "u1=$u1" >> "$GITHUB_OUTPUT"
+          echo "q1=$q1" >> "$GITHUB_OUTPUT"
+          echo "prod=$prod" >> "$GITHUB_OUTPUT"
+
       - name: deploy to u1
-        uses: nais/deploy/actions/deploy@v1
+        if: (github.event_name == 'workflow_dispatch' && inputs.environment == 'u1') || (github.event_name == 'push' && steps.changed.outputs.u1 == 'true' && (github.ref == 'refs/heads/dev/u1' || github.ref == 'refs/heads/main'))
+        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2 
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-fss
-          RESOURCE: oebs-omada-api/.nais/alerts-u1.yaml
+          RESOURCE: .nais/alert-u1.yaml
       - name: deploy to q1
-        uses: nais/deploy/actions/deploy@v1
+        if: (github.event_name == 'workflow_dispatch' && inputs.environment == 'q1') || (github.event_name == 'push' && steps.changed.outputs.q1 == 'true' && (github.ref == 'refs/heads/dev/q1' || github.ref == 'refs/heads/main'))
+        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-fss
-          RESOURCE: oebs-omada-api/.nais/alerts-q1.yaml
+          RESOURCE: .nais/alert-q1.yaml
       - name: deploy to prod
-        uses: nais/deploy/actions/deploy@v1
+        if: (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod') || (github.event_name == 'push' && steps.changed.outputs.prod == 'true' && github.ref == 'refs/heads/main')
+        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2 
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-fss
-          RESOURCE: oebs-omada-api/.nais/alerts-p.yaml
+          RESOURCE: .nais/alert-p.yaml

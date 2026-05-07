@@ -71,10 +71,13 @@ management:
         include: health, info, prometheus, metrics
 
 springdoc:
+  api-docs:
+    enabled: true
   packagesToScan: no.nav.oebs.api
   override-with-generic-response: false
   remove-broken-reference-definitions: false
   swagger-ui:
+    enabled: true
     disable-swagger-default-url: true
     url: /v3/api-docs
     tags-sorter: alpha

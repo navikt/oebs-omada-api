@@ -85,8 +85,4 @@ public class KallLoggHelper {
         }
     }
 
-    private String truncate(String value) {
-        if (value == null) return null;
-        return value.length() > 500 ? value.substring(0, 500) + "...[trunkert]" : value;
-    }
 }

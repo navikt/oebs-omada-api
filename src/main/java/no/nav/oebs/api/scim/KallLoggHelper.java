@@ -56,13 +56,20 @@ public class KallLoggHelper {
     private void save(String retning, String type, String method, String operation, int status,
                       long kalltid, String request, String response, String logginfo) {
         String korrelasjonId = MdcOperations.get(MdcOperations.MDC_CORRELATION_ID);
+        String safeMethod = sanitizeForLog(method);
+        String safeOperation = sanitizeForLog(operation);
+        String safeKorrelasjonId = sanitizeForLog(korrelasjonId);
+        String safeRequest = sanitizeForLog(request);
+        String safeResponse = sanitizeForLog(response);
+        String safeLogginfo = sanitizeForLog(logginfo);
 
         log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} requestPresent={} responsePresent={} logginfoPresent={} requestLength={} responseLength={} logginfoLength={}",
-                retning, type, method, operation, status, kalltid, korrelasjonId,
-                request != null, response != null, logginfo != null,
-                request == null ? 0 : request.length(),
-                response == null ? 0 : response.length(),
-                logginfo == null ? 0 : logginfo.length());
+          retning, type, safeMethod, safeOperation, status, kalltid, safeKorrelasjonId,
+          request != null, response != null, logginfo != null,
+          request == null ? 0 : request.length(),
+          response == null ? 0 : response.length(),
+          logginfo == null ? 0 : logginfo.length());
+        
 
         KallLogg kallLogg = KallLogg.builder()
                 .korrelasjonId(korrelasjonId)
@@ -85,4 +92,12 @@ public class KallLoggHelper {
         }
     }
 
+    private String sanitizeForLog(String value) {
+        if (value == null) return null;
+        return value
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replaceAll("\\p{Cntrl}", "_");
+    }
 }

@@ -173,7 +173,8 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
         return value
                 .replace("\r", "\\r")
                 .replace("\n", "\\n")
-                .replace("\t", "\\t");
+                .replace("\t", "\\t")
+                .replaceAll("\\p{Cntrl}", "_");
     }
 
     private String klassifiserAvvisningsgrunn(String reason) {

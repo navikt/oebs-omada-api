@@ -98,6 +98,7 @@ public class KallLoggHelper {
         return value
                 .replace("\r", "\\r")
                 .replace("\n", "\\n")
-                .replace("\t", "\\t");
+                .replace("\t", "\\t")
+                .replaceAll("\\p{Cntrl}", "_");
     }
 }

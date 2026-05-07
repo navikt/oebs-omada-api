@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.6</version>
         <relativePath/>
     </parent>
 
@@ -22,15 +22,14 @@
         <surefire.coverage.argLine/>
 
         <!-- NAV artifacts -->
-        <token-validation.version>6.0.3</token-validation.version>
-        <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
-        <springdoc-openapi.version>2.7.0</springdoc-openapi.version>
-        <lombok-version>1.18.38</lombok-version>
+        <token-validation.version>6.0.7</token-validation.version>
+        <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version>
+        <springdoc-openapi.version>3.0.3</springdoc-openapi.version>
+        <lombok-version>1.18.46</lombok-version>
 
         <!-- CVE-fixes via Spring Boot BOM property overrides -->
         <!-- CVE-2026-22737, CVE-2026-22735: Spring MVC script view path traversal og SSE stream corruption. Fikset i 7.0.6. -->
         <spring-framework.version>7.0.6</spring-framework.version>
-        <jackson-2-bom.version>2.19.4</jackson-2-bom.version>
         <!-- CVE-2026-24400: AssertJ XXE via isXmlEqualTo. Fikset i 3.27.7. -->
         <assertj.version>3.27.7</assertj.version>
         <!-- CVE-2026-1225: Logback arbitrary class instantiation. Fikset i 1.5.25. -->
@@ -44,11 +43,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>tools.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>3.1.1</version>
-            </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
@@ -218,7 +212,7 @@
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
         </dependency>
 
         <dependency>
@@ -246,7 +240,7 @@
         <dependency>
             <groupId>no.nav.security</groupId>
             <artifactId>mock-oauth2-server</artifactId>
-            <version>2.1.10</version>
+            <version>2.3.0</version>
             <scope>test</scope>
         </dependency>
 

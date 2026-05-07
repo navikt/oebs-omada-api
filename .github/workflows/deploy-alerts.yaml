@@ -25,6 +25,9 @@ on:
 jobs:
   apply-alerts:
     name: Apply alerts to cluster
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

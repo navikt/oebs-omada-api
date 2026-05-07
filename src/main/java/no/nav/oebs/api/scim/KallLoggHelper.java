@@ -63,9 +63,13 @@ public class KallLoggHelper {
         String safeResponse = sanitizeForLog(response);
         String safeLogginfo = sanitizeForLog(logginfo);
 
-        log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} request={} response={} logginfo={}",
-                retning, type, safeMethod, safeOperation, status, kalltid, safeKorrelasjonId,
-                safeRequest, safeResponse, safeLogginfo);
+        log.info("[{}][{}] {} {} – status={} kalltid={}ms korrelasjonId={} requestPresent={} responsePresent={} logginfoPresent={} requestLength={} responseLength={} logginfoLength={}",
+          retning, type, safeMethod, safeOperation, status, kalltid, safeKorrelasjonId,
+          request != null, response != null, logginfo != null,
+          request == null ? 0 : request.length(),
+          response == null ? 0 : response.length(),
+          logginfo == null ? 0 : logginfo.length());
+        
 
         KallLogg kallLogg = KallLogg.builder()
                 .korrelasjonId(korrelasjonId)

@@ -1,0 +1,95 @@
+version: 2
+
+updates:
+  # ── Maven-avhengigheter ────────────────────────────────────────────────────
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Oslo"
+    # PRer rettes mot dev/u1 — verifiseres der før merge til main (prod)
+    target-branch: "dev/u1"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependabot"
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+
+    groups:
+      # Spring Boot BOM — alle starters følger parent-versjonen
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+          - "org.springframework:*"
+
+      # NAV token-support — alle tre artefaktene må ha samme versjon
+      nav-token-support:
+        patterns:
+          - "no.nav.security:token-validation-*"
+          - "no.nav.security:mock-oauth2-server"
+
+      # Jetty — alle artefakter MÅ ha identisk versjon (både core og ee11-moduler)
+      jetty:
+        patterns:
+          - "org.eclipse.jetty:*"
+          - "org.eclipse.jetty.ee11:*"
+
+    ignore:
+      # ── Spring Boot / Spring Framework ──────────────────────────────────────
+      # Major-versjon (f.eks. Boot 4→5) krever verifisert migrasjon
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springframework:*"
+        update-types: ["version-update:semver-major"]
+
+      # ── SCIMple ──────────────────────────────────────────────────────────────
+      # Står på 1.0.0-M1 (milestone) — ustabilt API, alle oppdateringer manuelt
+      - dependency-name: "org.apache.directory.scimple:*"
+
+      # ── NAV token-support ────────────────────────────────────────────────────
+      # Major-versjon kan inneholde breaking API-endringer mot no.nav.security.*
+      - dependency-name: "no.nav.security:*"
+        update-types: ["version-update:semver-major"]
+
+      # ── Jetty ────────────────────────────────────────────────────────────────
+      # Major-versjon (f.eks. 12→13) krever koordinering med Spring Boot BOM
+      - dependency-name: "org.eclipse.jetty:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.eclipse.jetty.ee11:*"
+        update-types: ["version-update:semver-major"]
+
+      # ── Jackson ──────────────────────────────────────────────────────────────
+      # Allerede på Jackson 3.x — major (3→4) manuelt
+      - dependency-name: "tools.jackson.core:*"
+        update-types: ["version-update:semver-major"]
+
+      # ── Øvrige ───────────────────────────────────────────────────────────────
+      - dependency-name: "org.projectlombok:lombok"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springdoc:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "net.logstash.logback:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "jakarta.validation:jakarta.validation-api"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Oslo"
+    target-branch: "dev/u1"
+    labels:
+      - "dependabot"
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(actions)"

@@ -1,0 +1,141 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: oebs-omada-api-alerts-u1
+  namespace: team-oebs
+  labels:
+    team: team-oebs
+spec:
+  groups:
+    - name: oebs-omada-api-alerts-u1
+      rules:
+        - alert: OebsOmadaApiU1InstanceDown
+          expr: kube_deployment_status_replicas_available{namespace="team-oebs", deployment="oebs-omada-api-u1"} == 0
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-u1 har ingen tilgjengelige replicas"
+            consequence: "Testmiljoet for SCIM API er utilgjengelig"
+            action: "Sjekk deploystatus og pods med kubectl describe deploy/pod og kubectl logs"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1PodRestarts
+          expr: increase(kube_pod_container_status_restarts_total{namespace="team-oebs", pod=~"oebs-omada-api-u1-.*"}[15m]) > 2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-u1 restarter ofte"
+            consequence: "Ustabilitet i testmiljo"
+            action: "Undersok logs, OOMKill og readiness/liveness-feil"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1SelftestFailed
+          expr: selftests_aggregate_result_status{namespace="team-oebs", app="oebs-omada-api-u1"} > 0
+          for: 2m
+          annotations:
+            summary: "oebs-omada-api-u1 har feil i selftest"
+            consequence: "En eller flere interne avhengigheter feiler i testmiljo"
+            action: "Sjekk selftest-endepunkt, avhengigheter og applikasjonslogger"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1HighErrorRate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1", status=~"5.."}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1"}[5m])), 0.1)
+            ) > 0.10
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1"}[5m])) > 0.2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-u1 har hoy andel 5xx-feil"
+            consequence: "Feil i testmiljo kan skjule regresjoner"
+            action: "Sjekk logger, traces og nylige deploys"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1HighLatencyP95
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (rate(http_server_requests_seconds_bucket{namespace="team-oebs", app="oebs-omada-api-u1"}[5m]))
+            ) > 2
+          for: 15m
+          annotations:
+            summary: "oebs-omada-api-u1 har hoy p95-latency"
+            consequence: "Treg respons i testmiljo"
+            action: "Sjekk databasekall, ressursbruk og timeout-innstillinger"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1HikariConnectionPressure
+          expr: |
+            max(hikaricp_connections_active{namespace="team-oebs", app="oebs-omada-api-u1"})
+            /
+            clamp_min(max(hikaricp_connections_max{namespace="team-oebs", app="oebs-omada-api-u1"}), 1)
+            > 0.90
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-u1 har hoy DB-pool-belastning"
+            consequence: "Risiko for timeout og ustabilitet"
+            action: "Sjekk DB-tilgjengelighet, pool-konfig og kallmønster"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1HikariConnectionTimeouts
+          expr: increase(hikaricp_connections_timeout_total{namespace="team-oebs", app="oebs-omada-api-u1"}[5m]) > 0
+          for: 5m
+          annotations:
+            summary: "oebs-omada-api-u1 opplever Hikari connection timeouts"
+            consequence: "Kall mot API/DB kan feile"
+            action: "Sjekk Oracle-tilgjengelighet, nettverk og pool-storrelse"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1High401Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1", uri=~"/scim/v2/.*", status="401"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.25
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1", uri=~"/scim/v2/.*"}[5m])) > 0.2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-u1 har mange 401-feil"
+            consequence: "Token/auth i testmiljo kan vaere feil konfigurert"
+            action: "Sjekk tokenvalidering, klientkonfig og nylige auth-endringer"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiU1High403Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1", uri=~"/scim/v2/.*", status="403"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.15
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-u1", uri=~"/scim/v2/.*"}[5m])) > 0.2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-u1 har mange 403-feil"
+            consequence: "Tilgangsregler kan blokkere legitim trafikk i testmiljo"
+            action: "Sjekk sikkerhetsregler, roller og klientidentitet"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+
+

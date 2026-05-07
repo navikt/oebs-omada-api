@@ -30,6 +30,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -244,8 +245,22 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
 
         log.info("{} User: interfaceMsgId={} – kaller synkron prosedyre", operasjon, result.getInterfaceMsgId());
         long syncStart = System.currentTimeMillis();
-        PlsqlProcedureResult syncResult = plsqlRepository.executeSyncProcedure(
-                plsqlSyncProcedureName, result.getInterfaceMsgId());
+
+        PlsqlProcedureResult syncResult;
+        try {
+            syncResult = plsqlRepository.executeSyncProcedure(
+                    plsqlSyncProcedureName, result.getInterfaceMsgId());
+        } catch (Exception e) {
+            long syncKalltid = System.currentTimeMillis() - syncStart;
+            log.error("{} User SYNC FEIL: id={}, interfaceMsgId={}", operasjon, id, result.getInterfaceMsgId(), e);
+            // Log with interfaceMsgId in request so it is always traceable in KallLogg even on failure
+            kallLoggHelper.loggUt(KallLogg.METHOD_POST, plsqlSyncProcedureName, 500, syncKalltid,
+                    String.valueOf(result.getInterfaceMsgId()),
+                    errorJson(500, e.getMessage()),
+                    "interfaceMsgId=" + result.getInterfaceMsgId());
+            throw new ResourceException(500, "Intern feil: " + e.getMessage());
+        }
+
         long syncKalltid = System.currentTimeMillis() - syncStart;
 
         boolean pending = isSyncPending(syncResult);
@@ -417,8 +432,15 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
     }
 
     private String errorJson(int status, String detail) {
-        return String.format(
-            "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"%d\",\"detail\":\"%s\"}",
-            status, detail != null ? detail.replace("\"", "'") : "Ukjent feil");
+        try {
+            return objectMapper.writeValueAsString(Map.of(
+                    "schemas", List.of("urn:ietf:params:scim:api:messages:2.0:Error"),
+                    "status", String.valueOf(status),
+                    "detail", detail != null ? detail : "Ukjent feil"
+            ));
+        } catch (JsonProcessingException e) {
+            log.warn("Kunne ikke serialisere SCIM-feil til JSON", e);
+            return "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"500\",\"detail\":\"Ukjent feil\"}";
+        }
     }
 }

@@ -6,6 +6,9 @@ metadata:
   labels:
     app: oebs-omada-api-u1
     team: team-oebs
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
 
 spec:
   image: {{ image }}
@@ -13,16 +16,17 @@ spec:
   replicas:
     min: 1
     max: 1
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
 
   resources:
     requests:
       cpu: 50m
-      memory: 512Mi
+      memory: 864Mi
     limits:
-      memory: 1Gi
-  env:
-    - name: JDK_JAVA_OPTIONS
-      value: "-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=40.0 -XX:MaxMetaspaceSize=200m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof"
+      memory: 928Mi
   azure:
     application:
       enabled: true

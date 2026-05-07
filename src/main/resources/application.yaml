@@ -39,6 +39,19 @@ spring:
     password: ${APPS_PASSWORD}
     url: ${DB_URL}
     hikari:
+      # Maks ventetid på å hente en tilkobling fra poolen (30 s).
+      connection-timeout: 30000
+      # Unnga stale Oracle-tilkoblinger (ORA-17008) ved a rotere og validere oftere.
+      validation-timeout: ${HIKARI_VALIDATION_TIMEOUT_MS:5000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:840000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:600000}
+      keepalive-time: ${HIKARI_KEEPALIVE_TIME_MS:300000}
+      # Oracle socket-timeout: kast exception etter 110 s uten svar fra DB.
+      # Satt lavere enn nginx proxy-read-timeout (120 s) slik at applikasjonen
+      # returnerer HTTP 500 før nginx gir 504 Gateway Timeout.
+      data-source-properties:
+        oracle.net.ReadTimeout: 110000
+        oracle.jdbc.ReadTimeout: 110000
       connection-init-sql: >
         ALTER SESSION SET
           NLS_LANGUAGE    = 'NORWEGIAN'
@@ -58,14 +71,15 @@ management:
         include: health, info, prometheus, metrics
 
 springdoc:
-  packagesToScan: no.nav.oebs.api.controller
+  packagesToScan: no.nav.oebs.api
   override-with-generic-response: false
   remove-broken-reference-definitions: false
   swagger-ui:
     disable-swagger-default-url: true
+    url: /v3/api-docs
     tags-sorter: alpha
 
 logging:
   level:
-    no.nav.security.token.support: DEBUG
-    no.nav.security.jwt: DEBUG
+    no.nav.security.token.support: info
+    no.nav.security.jwt: info

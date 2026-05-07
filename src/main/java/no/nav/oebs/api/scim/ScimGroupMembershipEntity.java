@@ -9,7 +9,7 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "XXRTV_OMADA_SCIM_GRPS_BRUKER_V", schema = "XXRTV")
+@Table(name = "XXRTV_OMADA_SCIM_GRPS_BRUKER_V", schema = "APPS")
 @IdClass(ScimGroupMembershipId.class)
 public class ScimGroupMembershipEntity {
 

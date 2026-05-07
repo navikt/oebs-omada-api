@@ -1,0 +1,70 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: oebs-omada-api-alerts-q1
+  namespace: team-oebs
+  labels:
+    team: team-oebs
+spec:
+  groups:
+    - name: oebs-omada-api-alerts-q1
+      rules:
+        - alert: OebsOmadaApiQ1InstanceDown
+          expr: kube_deployment_status_replicas_available{namespace="team-oebs", deployment="oebs-omada-api-q1"} == 0
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-q1 har ingen tilgjengelige replicas"
+            consequence: "Testmiljoet for SCIM API er utilgjengelig"
+            action: "Sjekk deploystatus og pods med kubectl describe deploy/pod og kubectl logs"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiQ1PodRestarts
+          expr: increase(kube_pod_container_status_restarts_total{namespace="team-oebs", pod=~"oebs-omada-api-q1-.*"}[15m]) > 2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-q1 restarter ofte"
+            consequence: "Ustabilitet i testmiljo"
+            action: "Undersok logs, OOMKill og readiness/liveness-feil"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiQ1High401Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-q1", uri=~"/scim/v2/.*", status="401"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-q1", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.25
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-q1", uri=~"/scim/v2/.*"}[5m])) > 0.2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-q1 har mange 401-feil"
+            consequence: "Auth-regresjoner kan blokkere verifisering"
+            action: "Sjekk tokenvalidering, klientoppsett og nylige auth-endringer"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiQ1High403Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-q1", uri=~"/scim/v2/.*", status="403"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-q1", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.15
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api-q1", uri=~"/scim/v2/.*"}[5m])) > 0.2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api-q1 har mange 403-feil"
+            consequence: "Tilgangsregler kan blokkere legitim trafikk i q1"
+            action: "Sjekk sikkerhetsregler, roller og klientidentitet"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+

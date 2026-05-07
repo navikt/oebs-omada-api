@@ -1,0 +1,124 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: oebs-omada-api-alerts-p
+  namespace: team-oebs
+  labels:
+    team: team-oebs
+spec:
+  groups:
+    - name: oebs-omada-api-alerts-p
+      rules:
+        - alert: OebsOmadaApiProdInstanceDown
+          expr: kube_deployment_status_replicas_available{namespace="team-oebs", deployment="oebs-omada-api"} == 0
+          for: 5m
+          annotations:
+            summary: "oebs-omada-api i prod har ingen tilgjengelige replicas"
+            consequence: "SCIM API er utilgjengelig i prod"
+            action: "Sjekk deploystatus og pods med kubectl describe deploy/pod og kubectl logs"
+          labels:
+            namespace: team-oebs
+            severity: critical
+
+        - alert: OebsOmadaApiProdPodRestarts
+          expr: increase(kube_pod_container_status_restarts_total{namespace="team-oebs", pod=~"oebs-omada-api-.*"}[15m]) > 2
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api i prod restarter ofte"
+            consequence: "Ustabil tjeneste og risiko for avbrudd"
+            action: "Undersok logs, OOMKill og readiness/liveness-feil"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiProdHighErrorRate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", status=~"5.."}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api"}[5m])), 0.1)
+            ) > 0.05
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api"}[5m])) > 0.5
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api i prod har hoy 5xx-rate"
+            consequence: "Brukere og integrasjoner far feilrespons"
+            action: "Sjekk feil i logger og traces for feilede kall"
+          labels:
+            namespace: team-oebs
+            severity: critical
+
+        - alert: OebsOmadaApiProdElevated401Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*", status="401"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.10
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])) > 0.5
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api i prod har forhoyet andel 401-feil"
+            consequence: "Klienter kan bli avvist pga auth-problemer"
+            action: "Sjekk tokenvalidering, issuer/audience og klientkonfig"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiProdHigh401Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*", status="401"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.20
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])) > 0.5
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api i prod har hoy andel 401-feil"
+            consequence: "Stor risiko for autentiseringsbrudd hos konsumenter"
+            action: "Start incident og valider auth-konfig end-to-end"
+          labels:
+            namespace: team-oebs
+            severity: critical
+
+        - alert: OebsOmadaApiProdElevated403Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*", status="403"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.05
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])) > 0.5
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api i prod har forhoyet andel 403-feil"
+            consequence: "Tilgangsregler kan blokkere legitim trafikk"
+            action: "Sjekk roller, policy og nylige endringer i tilgangsstyring"
+          labels:
+            namespace: team-oebs
+            severity: warning
+
+        - alert: OebsOmadaApiProdHigh403Rate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*", status="403"}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])), 0.1)
+            ) > 0.12
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="oebs-omada-api", uri=~"/scim/v2/.*"}[5m])) > 0.5
+          for: 10m
+          annotations:
+            summary: "oebs-omada-api i prod har hoy andel 403-feil"
+            consequence: "Akutt risiko for tjenestenekt for gyldige konsumenter"
+            action: "Start incident og verifiser tilgangsstyring umiddelbart"
+          labels:
+            namespace: team-oebs
+            severity: critical
+
+

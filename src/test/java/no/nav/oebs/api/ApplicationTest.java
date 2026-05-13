@@ -1,4 +1,5 @@
-import no.nav.oebs.api.Application;
+package no.nav.oebs.api;
+
 import no.nav.oebs.api.db.repository.KallLoggRepository;
 import no.nav.oebs.api.db.repository.KallLoggRepositoryImpl;
 import no.nav.oebs.api.db.repository.PlsqlProcedureRepository;

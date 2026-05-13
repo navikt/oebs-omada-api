@@ -47,7 +47,7 @@ class ScimGroupResourceProviderTest {
         ScimGroup result = provider.get("G$1234");
 
         assertThat(result).isSameAs(group);
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups/G$1234"), eq(200), any(Long.class), any(String.class), eq((String) null));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups/G$1234"), eq(200), any(Long.class), any(String.class), eq(null));
     }
 
     @Test
@@ -57,7 +57,7 @@ class ScimGroupResourceProviderTest {
         ScimGroup result = provider.get("G$UKJENT");
 
         assertThat(result).isNull();
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups/G$UKJENT"), eq(404), any(Long.class), eq((String) null), eq("Group not found"));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups/G$UKJENT"), eq(404), any(Long.class), eq(null), eq("Group not found"));
     }
 
     @Test
@@ -67,7 +67,7 @@ class ScimGroupResourceProviderTest {
         ResourceException ex = assertThrows(ResourceException.class, () -> provider.get("G$ERR"));
 
         assertThat(ex.getStatus()).isEqualTo(500);
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups/G$ERR"), eq(500), any(Long.class), contains("\"status\":\"500\""), eq((String) null));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups/G$ERR"), eq(500), any(Long.class), contains("\"status\":\"500\""), eq(null));
     }
 
     @Test
@@ -82,7 +82,7 @@ class ScimGroupResourceProviderTest {
         assertThat(response.getResources()).containsExactly(group);
         assertThat(response.getTotalResults()).isEqualTo(1);
         verify(groupService).getGroups(1, 100);
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups"), eq(200), any(Long.class), eq((String) null), contains("totalResults=1"));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups"), eq(200), any(Long.class), eq(null), contains("totalResults=1"));
     }
 
     @Test
@@ -102,14 +102,14 @@ class ScimGroupResourceProviderTest {
         RuntimeException ex = assertThrows(RuntimeException.class, () -> provider.find(null, null, null));
 
         assertThat(ex.getMessage()).contains("Intern feil");
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups"), eq(500), any(Long.class), contains("\"status\":\"500\""), eq((String) null));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_GET), eq("/scim/v2/Groups"), eq(500), any(Long.class), contains("\"status\":\"500\""), eq(null));
     }
 
     @Test
     void create_throws405() {
         ResourceException ex = assertThrows(ResourceException.class, () -> provider.create(new ScimGroup()));
         assertThat(ex.getStatus()).isEqualTo(405);
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_POST), eq("/scim/v2/Groups"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq((String) null));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_POST), eq("/scim/v2/Groups"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq(null));
     }
 
     @Test
@@ -117,7 +117,7 @@ class ScimGroupResourceProviderTest {
         ResourceException ex = assertThrows(ResourceException.class,
                 () -> provider.update("G$1234", null, new ScimGroup(), null, null));
         assertThat(ex.getStatus()).isEqualTo(405);
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_PUT), eq("/scim/v2/Groups/G$1234"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq((String) null));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_PUT), eq("/scim/v2/Groups/G$1234"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq(null));
     }
 
     @Test
@@ -125,14 +125,14 @@ class ScimGroupResourceProviderTest {
         ResourceException ex = assertThrows(ResourceException.class,
                 () -> provider.patch("G$1234", null, List.of(), null, null));
         assertThat(ex.getStatus()).isEqualTo(405);
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_PUT), eq("/scim/v2/Groups/G$1234"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq((String) null));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_PUT), eq("/scim/v2/Groups/G$1234"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq(null));
     }
 
     @Test
     void delete_throws405() {
         ResourceException ex = assertThrows(ResourceException.class, () -> provider.delete("G$1234"));
         assertThat(ex.getStatus()).isEqualTo(405);
-        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_DELETE), eq("/scim/v2/Groups/G$1234"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq((String) null));
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_DELETE), eq("/scim/v2/Groups/G$1234"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq(null));
     }
 }
 

@@ -412,11 +412,15 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
 
     private String toJson(Object obj) {
         try {
-            return objectMapper.writeValueAsString(obj);
+            return serializeToJson(obj);
         } catch (JsonProcessingException e) {
             log.warn("Kunne ikke serialisere til JSON", e);
             return null;
         }
+    }
+
+    String serializeToJson(Object obj) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(obj);
     }
 
     /**
@@ -452,7 +456,7 @@ public class ScimUserResourceProvider implements Repository<ScimUser> {
 
     private String errorJson(int status, String detail) {
         try {
-            return objectMapper.writeValueAsString(Map.of(
+            return serializeToJson(Map.of(
                     "schemas", List.of("urn:ietf:params:scim:api:messages:2.0:Error"),
                     "status", String.valueOf(status),
                     "detail", detail != null ? detail : "Ukjent feil"

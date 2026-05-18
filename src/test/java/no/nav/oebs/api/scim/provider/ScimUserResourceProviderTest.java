@@ -133,6 +133,60 @@ class ScimUserResourceProviderTest {
     }
 
     @Test
+    void create_usesExternalIdAsId_whenIdMissing() throws ResourceException {
+        ScimUser resource = new ScimUser();
+        resource.setId(" ");
+        resource.setExternalId("KEXT123");
+        resource.setUserName("ABC1234");
+
+        ScimUser fromView = new ScimUser();
+        fromView.setId("KEXT123");
+
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.NY), anyString()))
+                .thenReturn(new PlsqlProcedureResult(null, 0, "ok", null, "0"));
+        when(userService.getUser("KEXT123")).thenReturn(Optional.of(fromView));
+
+        ScimUser result = provider.create(resource);
+
+        assertThat(resource.getId()).isEqualTo("KEXT123");
+        assertThat(result).isSameAs(fromView);
+    }
+
+    @Test
+    void create_returnsFallbackWithVersion_whenViewHasNoUser() throws ResourceException {
+        ScimUser resource = new ScimUser();
+        resource.setId("KFALLBACK");
+        resource.setUserName("ABC1234");
+
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.NY), anyString()))
+                .thenReturn(new PlsqlProcedureResult(null, 0, "ok", null, "0"));
+        when(userService.getUser("KFALLBACK")).thenReturn(Optional.empty());
+
+        ScimUser result = provider.create(resource);
+
+        assertThat(result).isSameAs(resource);
+        assertThat(result.getMeta()).isNotNull();
+        assertThat(result.getMeta().getVersion()).startsWith("W/\"");
+    }
+
+    @Test
+    void create_returnsFallbackWithVersion_whenViewLookupThrowsRuntimeException() throws ResourceException {
+        ScimUser resource = new ScimUser();
+        resource.setId("KERRVIEW");
+        resource.setUserName("ABC1234");
+
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.NY), anyString()))
+                .thenReturn(new PlsqlProcedureResult(null, 0, "ok", null, "0"));
+        when(userService.getUser("KERRVIEW")).thenThrow(new RuntimeException("view down"));
+
+        ScimUser result = provider.create(resource);
+
+        assertThat(result).isSameAs(resource);
+        assertThat(result.getMeta()).isNotNull();
+        assertThat(result.getMeta().getVersion()).startsWith("W/\"");
+    }
+
+    @Test
     void create_throws500_whenProcedureRuntimeFails() {
         ScimUser resource = new ScimUser();
         resource.setId("K500");
@@ -163,6 +217,25 @@ class ScimUserResourceProviderTest {
 
         assertThat(ex.getStatus()).isEqualTo(500);
         assertThat(ex.getMessage()).contains("Intern feil");
+    }
+
+    @Test
+    void create_throws202_whenSyncIsPending() {
+        ScimUser resource = new ScimUser();
+        resource.setId("KPENDING");
+        resource.setUserName("ABC1234");
+
+        ReflectionTestUtils.setField(provider, "syncEnabled", true);
+
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.NY), anyString()))
+                .thenReturn(new PlsqlProcedureResult(null, 0, "ok", 99L, "0"));
+        when(plsqlRepository.executeSyncProcedure(any(), eq(99L)))
+                .thenReturn(new PlsqlProcedureResult(null, 0, "pending", null, "0", "PENDING", "NORMAL"));
+
+        ResourceException ex = assertThrows(ResourceException.class, () -> provider.create(resource));
+
+        assertThat(ex.getStatus()).isEqualTo(202);
+        assertThat(ex.getMessage()).contains("Synkronisering er akseptert og pågår");
     }
 
     @Test

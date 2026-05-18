@@ -45,5 +45,12 @@ class LoggingUtilsTest {
 
         assertThat(LoggingUtils.maskIfFnr(input)).isEqualTo(input);
     }
+
+    @Test
+    void maskIfFnr_doesNotMask_whenCandidateContainsNonDigitInside() {
+        String input = "A12345X78901B";
+
+        assertThat(LoggingUtils.maskIfFnr(input)).isEqualTo(input);
+    }
 }
 

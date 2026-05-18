@@ -104,7 +104,7 @@ public class StartupLogger {
             } else {
                 log.info("  (ikke en ServletWebServerApplicationContext — hopper over servlet-logging)");
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("  Kunne ikke lese servlet-registreringer: {}", e.getMessage());
         }
         log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -129,7 +129,7 @@ public class StartupLogger {
         long uptime;
         try {
             uptime = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             uptime = -1;
         }
         String port = environment.getProperty("server.port", "8080");
@@ -145,7 +145,7 @@ public class StartupLogger {
     private String safeProperty(String key) {
         try {
             return environment.getProperty(key, "<ikke satt>");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return "<ikke tilgjengelig: " + e.getMessage() + ">";
         }
     }

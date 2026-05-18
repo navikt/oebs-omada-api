@@ -39,7 +39,7 @@ class ScimGroupResourceProviderTest {
     private ScimGroupResourceProvider provider;
 
     @Test
-    void get_returnsGroup_whenFound() throws Exception {
+    void get_returnsGroup_whenFound() throws ResourceException {
         ScimGroup group = new ScimGroup();
         group.setId("G$1234");
         when(groupService.getGroup("G$1234")).thenReturn(Optional.of(group));
@@ -51,7 +51,7 @@ class ScimGroupResourceProviderTest {
     }
 
     @Test
-    void get_returnsNull_whenNotFound() throws Exception {
+    void get_returnsNull_whenNotFound() throws ResourceException {
         when(groupService.getGroup("G$UKJENT")).thenReturn(Optional.empty());
 
         ScimGroup result = provider.get("G$UKJENT");

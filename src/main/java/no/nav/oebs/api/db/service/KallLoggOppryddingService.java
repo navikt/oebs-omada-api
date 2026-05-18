@@ -66,7 +66,7 @@ public class KallLoggOppryddingService {
                     requestJson(grense, retentionDays, totaltFor, skalSlettes),
                     "{\"slettet\":" + slettet + ",\"totaltEtter\":" + totaltEtter + "}",
                     null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             long kalltid = System.currentTimeMillis() - start;
             log.error("KallLogg opprydding feilet etter {}ms (skulle slette {} av {} rader): {}",
                     kalltid, skalSlettes, totaltFor, e.getMessage(), e);

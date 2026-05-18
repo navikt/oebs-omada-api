@@ -84,7 +84,7 @@ public class KallLoggHelper {
 
         try {
             kallLoggRepository.save(kallLogg);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Feil ved logging av kalloggdata til databasen; feilmelding=" + e.getMessage(), e);
         }
     }

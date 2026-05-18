@@ -195,7 +195,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 	private void saveKallLogg(KallLogg kallLogg) {
 		try {
 			kallLoggRepository.save(kallLogg);
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			log.error("Feil ved logging av API-kalloggdata til databasen; feilmelding=" + e.getMessage(), e);
 		}
 	}

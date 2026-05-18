@@ -123,7 +123,7 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
                         try {
                             String konfIss = ic.getMetadata().getIssuer().getValue();
                             return konfIss != null && konfIss.equals(tokenIss);
-                        } catch (Exception e) {
+                        } catch (RuntimeException e) {
                             return false;
                         }
                     });
@@ -147,7 +147,7 @@ public class ScimTokenValidationFilter implements ContainerRequestFilter {
 
             return "Token er ugyldig — iss=" + tokenIss + ", aud=" + tokenAud;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return "Token er ugyldig (kunne ikke lese innhold: " + e.getMessage() + ")";
         }
     }

@@ -24,6 +24,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class KallLoggOppryddingService {
 
+    private static final String KALLLOGG_OPPRYDDING_KILDE = "XXRTV_OMADA_LOG opprydding";
+
     private final KallLoggRepository kallLoggRepository;
     private final KallLoggHelper kallLoggHelper;
 
@@ -46,7 +48,7 @@ public class KallLoggOppryddingService {
 
         if (skalSlettes == 0) {
             log.info("KallLogg opprydding — ingenting å slette");
-            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "XXRTV_OMADA_LOG opprydding", 200, 0,
+            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, KALLLOGG_OPPRYDDING_KILDE, 200, 0,
                     requestJson(grense, retentionDays, totaltFor, skalSlettes),
                     "{\"slettet\":0,\"totaltEtter\":" + totaltFor + "}",
                     null);
@@ -60,15 +62,15 @@ public class KallLoggOppryddingService {
             long kalltid     = System.currentTimeMillis() - start;
             log.info("KallLogg opprydding fullført — slettet {} av {} rader på {}ms, {} rader gjenstår",
                     slettet, skalSlettes, kalltid, totaltEtter);
-            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "XXRTV_OMADA_LOG opprydding", 200, kalltid,
+            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, KALLLOGG_OPPRYDDING_KILDE, 200, kalltid,
                     requestJson(grense, retentionDays, totaltFor, skalSlettes),
                     "{\"slettet\":" + slettet + ",\"totaltEtter\":" + totaltEtter + "}",
                     null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             long kalltid = System.currentTimeMillis() - start;
             log.error("KallLogg opprydding feilet etter {}ms (skulle slette {} av {} rader): {}",
                     kalltid, skalSlettes, totaltFor, e.getMessage(), e);
-            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, "XXRTV_OMADA_LOG opprydding", 500, kalltid,
+            kallLoggHelper.loggUt(KallLogg.METHOD_DELETE, KALLLOGG_OPPRYDDING_KILDE, 500, kalltid,
                     requestJson(grense, retentionDays, totaltFor, skalSlettes),
                     null,
                     e.getMessage());

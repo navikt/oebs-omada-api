@@ -83,7 +83,7 @@ public class ScimpleConfig {
         try {
             registry.addSchema(ScimUser.class, List.of(EnterpriseExtension.class));
             registry.addSchema(ScimGroup.class, List.of());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("SchemaRegistry: feil ved skjemaregistrering: {}", e.getMessage(), e);
         }
         return registry;

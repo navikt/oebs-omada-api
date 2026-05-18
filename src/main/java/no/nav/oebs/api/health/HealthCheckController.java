@@ -7,8 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-//import no.nav.security.token.support.core.api.Unprotected;
-
 @RestController
 @RequestMapping(path = "/internal")
 public class HealthCheckController {

@@ -2,6 +2,7 @@ package no.nav.oebs.api.config.common.logging;
 
 
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -51,11 +52,14 @@ public class PropertySourceLogger {
         Properties properties = (Properties) propertySource.getSource();
         TreeMap<String, String> sortedProperties = sortPropertiesByKey(properties);
 
-        StringBuilder builder = new StringBuilder("Gjeldende verdier i propertyfil: " + propertySourceName);
+        StringBuilder builder = new StringBuilder("Gjeldende verdier i propertyfil: ");
+        builder.append(propertySourceName);
 
         for (Map.Entry<String, String> entry : sortedProperties.entrySet()) {
             builder.append('\n');
-            builder.append(entry.getKey() + "=" + maskIfPassword(entry.getKey(), entry.getValue()));
+            builder.append(entry.getKey());
+            builder.append('=');
+            builder.append(maskIfPassword(entry.getKey(), entry.getValue()));
         }
 
         logger.info("{}", builder);
@@ -85,6 +89,14 @@ public class PropertySourceLogger {
     }
 
     private String maskIfPassword(String key, String value) {
-        return (key.toLowerCase().matches(".*(pass[w]?ord|secret|ocp).*")) ? "********" : value;
+        String lowerKey = key.toLowerCase(Locale.ROOT);
+        boolean containsSecretPattern = lowerKey.contains("password")
+                || lowerKey.contains("passord")
+                || lowerKey.contains("secret")
+                || lowerKey.contains("ocp");
+        if (containsSecretPattern) {
+            return "********";
+        }
+        return value;
     }
 }

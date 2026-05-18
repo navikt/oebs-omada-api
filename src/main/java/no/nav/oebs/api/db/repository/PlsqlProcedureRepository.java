@@ -9,7 +9,6 @@ import javax.sql.DataSource;
 
 import no.nav.oebs.api.exception.UgyldigInputException;
 import no.nav.oebs.api.scim.KallLoggHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.UncategorizedDataAccessException;
@@ -48,19 +47,16 @@ public class PlsqlProcedureRepository {
 	}
 
 	private final JdbcTemplate jdbcTemplate;
+	private final KallLoggHelper kallLoggHelper;
 	private final ConcurrentMap<String, SimpleJdbcCall> jdbcCallCache = new ConcurrentHashMap<>();
-
-	@Lazy
-	@Autowired
-	private KallLoggHelper kallLoggHelper;
 
 	@Value("${oebs.plsql.org-id:0}")
 	private long orgId;
 
-	@Autowired
-	public PlsqlProcedureRepository(DataSource dataSource) {
+	public PlsqlProcedureRepository(DataSource dataSource, @Lazy KallLoggHelper kallLoggHelper) {
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 		this.jdbcTemplate.setResultsMapCaseInsensitive(true);
+		this.kallLoggHelper = kallLoggHelper;
 	}
 
 	public PlsqlProcedureResult executeInOutProcedure(String procedureName, Operasjon operasjon, String dataIn) {

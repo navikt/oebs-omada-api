@@ -19,6 +19,16 @@ import java.util.List;
 public class SwaggerConfig {
 
     public static final String BEARER_TOKEN_AUTH = "BearerToken";
+    private static final String TAG_USERS = "Users";
+    private static final String SCHEMA_SCIM_USER = "ScimUser";
+    private static final String SCHEMA_SCIM_GROUP = "ScimGroup";
+    private static final String SCIM_MEDIA_TYPE = "application/scim+json";
+    private static final String ERROR_MISSING_OR_INVALID_TOKEN = "Manglende eller ugyldig token";
+    private static final String ERROR_INTERNAL_PROCEDURE = "Intern feil / prosedyrefeil";
+    private static final String SCHEMA_REF_PREFIX = "#/components/schemas/";
+    private static final String PARAM_IN_QUERY = "query";
+    private static final String FIELD_SCHEMAS = "schemas";
+    private static final String FIELD_VALUE = "value";
 
     @Value("${OEBS_ENV}")
     String env;
@@ -48,8 +58,8 @@ public class SwaggerConfig {
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
                                         .description("Azure AD aksesstoken — lim inn uten 'Bearer' foran."))
-                        .addSchemas("ScimUser", scimUserSchema())
-                        .addSchemas("ScimGroup", scimGroupSchema())
+                        .addSchemas(SCHEMA_SCIM_USER, scimUserSchema())
+                        .addSchemas(SCHEMA_SCIM_GROUP, scimGroupSchema())
                         .addSchemas("ScimListResponse", scimListResponseSchema())
                         .addSchemas("ScimError", scimErrorSchema())
                         .addSchemas("EnterpriseExtension", enterpriseExtensionSchema())
@@ -72,9 +82,9 @@ public class SwaggerConfig {
         paths.addPathItem("/scim/v2/Groups/{id}", groupItemPath());
 
         // Metadata (åpne, ingen token)
-        paths.addPathItem("/scim/v2/ServiceProviderConfig", metaPath("ServiceProviderConfig", "SCIM ServiceProvider-konfigurasjon"));
-        paths.addPathItem("/scim/v2/Schemas", metaPath("Schemas", "Alle registrerte SCIM-skjemaer"));
-        paths.addPathItem("/scim/v2/ResourceTypes", metaPath("ResourceTypes", "Alle registrerte SCIM-ressurstyper"));
+        paths.addPathItem("/scim/v2/ServiceProviderConfig", metaPath("SCIM ServiceProvider-konfigurasjon"));
+        paths.addPathItem("/scim/v2/Schemas", metaPath("Alle registrerte SCIM-skjemaer"));
+        paths.addPathItem("/scim/v2/ResourceTypes", metaPath("Alle registrerte SCIM-ressurstyper"));
 
         return paths;
     }
@@ -85,23 +95,23 @@ public class SwaggerConfig {
         return new PathItem()
                 .get(new Operation()
                         .summary("Hent alle aktive brukere (paginert)")
-                        .tags(List.of("Users"))
+                        .tags(List.of(TAG_USERS))
                         .addParametersItem(startIndexParam())
                         .addParametersItem(countParam())
                         .addParametersItem(filterParam())
                         .responses(new ApiResponses()
-                                .addApiResponse("200", listResponse("ScimUser"))
-                                .addApiResponse("401", errorResponse("Manglende eller ugyldig token"))))
+                                .addApiResponse("200", listResponse(SCHEMA_SCIM_USER))
+                                .addApiResponse("401", errorResponse(ERROR_MISSING_OR_INVALID_TOKEN))))
                 .post(new Operation()
                         .summary("Opprett bruker i OeBS")
-                        .tags(List.of("Users"))
-                        .requestBody(scimRequestBody("ScimUser", "SCIM User-objekt"))
+                        .tags(List.of(TAG_USERS))
+                        .requestBody(scimRequestBody(SCHEMA_SCIM_USER, "SCIM User-objekt"))
                         .responses(new ApiResponses()
-                                .addApiResponse("201", singleResponse("ScimUser", "Bruker opprettet"))
+                                .addApiResponse("201", singleResponse(SCHEMA_SCIM_USER, "Bruker opprettet"))
                                 .addApiResponse("202", errorResponse("Synkronisering akseptert og pågår"))
                                 .addApiResponse("400", errorResponse("Ugyldig forespørsel"))
-                                .addApiResponse("401", errorResponse("Manglende eller ugyldig token"))
-                                .addApiResponse("500", errorResponse("Intern feil / prosedyrefeil"))));
+                                .addApiResponse("401", errorResponse(ERROR_MISSING_OR_INVALID_TOKEN))
+                                .addApiResponse("500", errorResponse(ERROR_INTERNAL_PROCEDURE))));
     }
 
     // ── /scim/v2/Users/{id} ──────────────────────────────────────────────────
@@ -110,32 +120,32 @@ public class SwaggerConfig {
         return new PathItem()
                 .get(new Operation()
                         .summary("Hent enkelt bruker")
-                        .tags(List.of("Users"))
+                        .tags(List.of(TAG_USERS))
                         .addParametersItem(idParam("nav-id / externalId, f.eks. K105317"))
                         .responses(new ApiResponses()
-                                .addApiResponse("200", singleResponse("ScimUser", "Bruker funnet"))
-                                .addApiResponse("401", errorResponse("Manglende eller ugyldig token"))
+                                .addApiResponse("200", singleResponse(SCHEMA_SCIM_USER, "Bruker funnet"))
+                                .addApiResponse("401", errorResponse(ERROR_MISSING_OR_INVALID_TOKEN))
                                 .addApiResponse("404", errorResponse("Bruker ikke funnet"))))
                 .put(new Operation()
                         .summary("Oppdater bruker i OeBS")
-                        .tags(List.of("Users"))
+                        .tags(List.of(TAG_USERS))
                         .addParametersItem(idParam("nav-id / externalId"))
-                        .requestBody(scimRequestBody("ScimUser", "SCIM User-objekt (fullstendig)"))
+                        .requestBody(scimRequestBody(SCHEMA_SCIM_USER, "SCIM User-objekt (fullstendig)"))
                         .responses(new ApiResponses()
-                                .addApiResponse("200", singleResponse("ScimUser", "Bruker oppdatert"))
+                                .addApiResponse("200", singleResponse(SCHEMA_SCIM_USER, "Bruker oppdatert"))
                                 .addApiResponse("202", errorResponse("Synkronisering akseptert og pågår"))
                                 .addApiResponse("400", errorResponse("Ugyldig forespørsel"))
-                                .addApiResponse("401", errorResponse("Manglende eller ugyldig token"))
+                                .addApiResponse("401", errorResponse(ERROR_MISSING_OR_INVALID_TOKEN))
                                 .addApiResponse("422", errorResponse("Advarsel fra sync-prosedyre"))
-                                .addApiResponse("500", errorResponse("Intern feil / prosedyrefeil"))))
+                                .addApiResponse("500", errorResponse(ERROR_INTERNAL_PROCEDURE))))
                 .delete(new Operation()
                         .summary("Slett bruker i OeBS")
-                        .tags(List.of("Users"))
+                        .tags(List.of(TAG_USERS))
                         .addParametersItem(idParam("nav-id / externalId"))
                         .responses(new ApiResponses()
                                 .addApiResponse("204", new ApiResponse().description("Bruker slettet"))
-                                .addApiResponse("401", errorResponse("Manglende eller ugyldig token"))
-                                .addApiResponse("500", errorResponse("Intern feil / prosedyrefeil"))));
+                                .addApiResponse("401", errorResponse(ERROR_MISSING_OR_INVALID_TOKEN))
+                                .addApiResponse("500", errorResponse(ERROR_INTERNAL_PROCEDURE))));
     }
 
     // ── /scim/v2/Groups ──────────────────────────────────────────────────────
@@ -149,8 +159,8 @@ public class SwaggerConfig {
                         .addParametersItem(countParam())
                         .addParametersItem(filterParam())
                         .responses(new ApiResponses()
-                                .addApiResponse("200", listResponse("ScimGroup"))
-                                .addApiResponse("401", errorResponse("Manglende eller ugyldig token"))));
+                                .addApiResponse("200", listResponse(SCHEMA_SCIM_GROUP))
+                                .addApiResponse("401", errorResponse(ERROR_MISSING_OR_INVALID_TOKEN))));
     }
 
     private PathItem groupItemPath() {
@@ -165,14 +175,14 @@ public class SwaggerConfig {
                         .tags(List.of("Groups"))
                         .addParametersItem(idParam("SCIM-gruppe-ID, f.eks. G12345 eller A51840"))
                         .responses(new ApiResponses()
-                                .addApiResponse("200", singleResponse("ScimGroup", "Gruppe funnet"))
-                                .addApiResponse("401", errorResponse("Manglende eller ugyldig token"))
+                                .addApiResponse("200", singleResponse(SCHEMA_SCIM_GROUP, "Gruppe funnet"))
+                                .addApiResponse("401", errorResponse(ERROR_MISSING_OR_INVALID_TOKEN))
                                 .addApiResponse("404", errorResponse("Gruppe ikke funnet"))));
     }
 
     // ── Metadata (åpne endepunkter) ───────────────────────────────────────────
 
-    private PathItem metaPath(String tag, String summary) {
+    private PathItem metaPath(String summary) {
         return new PathItem()
                 .get(new Operation()
                         .summary(summary)
@@ -181,7 +191,7 @@ public class SwaggerConfig {
                         .responses(new ApiResponses()
                                 .addApiResponse("200", new ApiResponse()
                                         .description("OK")
-                                        .content(new Content().addMediaType("application/scim+json",
+                                        .content(new Content().addMediaType(SCIM_MEDIA_TYPE,
                                                 new MediaType().schema(new ObjectSchema()))))));
     }
 
@@ -190,7 +200,7 @@ public class SwaggerConfig {
     private Schema<?> scimUserSchema() {
         return new ObjectSchema()
                 .description("SCIM 2.0 User-objekt med Enterprise- og NAV OeBS-extension")
-                .addProperty("schemas", new ArraySchema().items(new StringSchema())
+                .addProperty(FIELD_SCHEMAS, new ArraySchema().items(new StringSchema())
                         .example(List.of("urn:ietf:params:scim:schemas:core:2.0:User",
                                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
                                 "urn:ietf:params:scim:schemas:extension:nav:oebs:2.0:User")))
@@ -202,11 +212,11 @@ public class SwaggerConfig {
                         .addProperty("givenName", new StringSchema().description("Fornavn"))
                         .addProperty("familyName", new StringSchema().description("Etternavn")))
                 .addProperty("emails", new ArraySchema().items(new ObjectSchema()
-                        .addProperty("value", new StringSchema().description("E-postadresse"))
+                        .addProperty(FIELD_VALUE, new StringSchema().description("E-postadresse"))
                         .addProperty("type", new StringSchema()._enum(List.of("work")))
                         .addProperty("primary", new BooleanSchema())))
                 .addProperty("groups", new ArraySchema().items(new ObjectSchema()
-                        .addProperty("value", new StringSchema().description("SCIM gruppe-ID"))
+                        .addProperty(FIELD_VALUE, new StringSchema().description("SCIM gruppe-ID"))
                         .addProperty("display", new StringSchema().description("Gruppenavn"))))
                 .addProperty("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
                         new Schema<>().$ref("#/components/schemas/EnterpriseExtension"))
@@ -232,19 +242,19 @@ public class SwaggerConfig {
     private Schema<?> scimGroupSchema() {
         return new ObjectSchema()
                 .description("SCIM 2.0 Group-objekt — representerer både JTF-grupper (G$) og ansvarsområder (A$)")
-                .addProperty("schemas", new ArraySchema().items(new StringSchema()))
+                .addProperty(FIELD_SCHEMAS, new ArraySchema().items(new StringSchema()))
                 .addProperty("id", new StringSchema().description("SCIM-ID — format G<group_id> eller A<responsibility_id>"))
                 .addProperty("externalId", new StringSchema().description("OeBS-intern kilde-ID"))
                 .addProperty("displayName", new StringSchema().description("Gruppenavn"))
                 .addProperty("members", new ArraySchema().items(new ObjectSchema()
-                        .addProperty("value", new StringSchema().description("nav-id til brukermedlem"))
+                        .addProperty(FIELD_VALUE, new StringSchema().description("nav-id til brukermedlem"))
                         .addProperty("display", new StringSchema().description("Brukernavn"))));
     }
 
     private Schema<?> scimListResponseSchema() {
         return new ObjectSchema()
                 .description("SCIM 2.0 ListResponse")
-                .addProperty("schemas", new ArraySchema().items(new StringSchema()))
+                .addProperty(FIELD_SCHEMAS, new ArraySchema().items(new StringSchema()))
                 .addProperty("totalResults", new IntegerSchema().description("Totalt antall treff"))
                 .addProperty("startIndex", new IntegerSchema().description("1-basert startindeks"))
                 .addProperty("itemsPerPage", new IntegerSchema().description("Antall returnerte objekter"))
@@ -254,7 +264,7 @@ public class SwaggerConfig {
     private Schema<?> scimErrorSchema() {
         return new ObjectSchema()
                 .description("SCIM 2.0 Error-respons")
-                .addProperty("schemas", new ArraySchema().items(new StringSchema()))
+                .addProperty(FIELD_SCHEMAS, new ArraySchema().items(new StringSchema()))
                 .addProperty("status", new StringSchema().description("HTTP-statuskode som streng"))
                 .addProperty("detail", new StringSchema().description("Feilbeskrivelse"));
     }
@@ -268,19 +278,19 @@ public class SwaggerConfig {
     }
 
     private Parameter startIndexParam() {
-        return new Parameter().name("startIndex").in("query").required(false)
+        return new Parameter().name("startIndex").in(PARAM_IN_QUERY).required(false)
                 .description("1-basert startindeks for paginering (default: 1)")
                 .schema(new IntegerSchema()._default(1));
     }
 
     private Parameter countParam() {
-        return new Parameter().name("count").in("query").required(false)
+        return new Parameter().name("count").in(PARAM_IN_QUERY).required(false)
                 .description("Maks antall resultater å returnere (default: 100)")
                 .schema(new IntegerSchema()._default(100));
     }
 
     private Parameter filterParam() {
-        return new Parameter().name("filter").in("query").required(false)
+        return new Parameter().name("filter").in(PARAM_IN_QUERY).required(false)
                 .description("SCIM filteruttrykk, f.eks. userName eq \"ABC1234\"")
                 .schema(new StringSchema());
     }
@@ -290,33 +300,33 @@ public class SwaggerConfig {
                 .description(description)
                 .required(true)
                 .content(new Content()
-                        .addMediaType("application/scim+json", new MediaType()
-                                .schema(new Schema<>().$ref("#/components/schemas/" + schemaRef)))
+                        .addMediaType(SCIM_MEDIA_TYPE, new MediaType()
+                                .schema(new Schema<>().$ref(SCHEMA_REF_PREFIX + schemaRef)))
                         .addMediaType("application/json", new MediaType()
-                                .schema(new Schema<>().$ref("#/components/schemas/" + schemaRef))));
+                                .schema(new Schema<>().$ref(SCHEMA_REF_PREFIX + schemaRef))));
     }
 
     private ApiResponse listResponse(String schemaRef) {
         return new ApiResponse()
                 .description("Liste med " + schemaRef + "-objekter (SCIM ListResponse)")
                 .content(new Content()
-                        .addMediaType("application/scim+json", new MediaType()
-                                .schema(new Schema<>().$ref("#/components/schemas/ScimListResponse"))));
+                        .addMediaType(SCIM_MEDIA_TYPE, new MediaType()
+                                .schema(new Schema<>().$ref(SCHEMA_REF_PREFIX + "ScimListResponse"))));
     }
 
     private ApiResponse singleResponse(String schemaRef, String description) {
         return new ApiResponse()
                 .description(description)
                 .content(new Content()
-                        .addMediaType("application/scim+json", new MediaType()
-                                .schema(new Schema<>().$ref("#/components/schemas/" + schemaRef))));
+                        .addMediaType(SCIM_MEDIA_TYPE, new MediaType()
+                                .schema(new Schema<>().$ref(SCHEMA_REF_PREFIX + schemaRef))));
     }
 
     private ApiResponse errorResponse(String description) {
         return new ApiResponse()
                 .description(description)
                 .content(new Content()
-                        .addMediaType("application/scim+json", new MediaType()
-                                .schema(new Schema<>().$ref("#/components/schemas/ScimError"))));
+                        .addMediaType(SCIM_MEDIA_TYPE, new MediaType()
+                                .schema(new Schema<>().$ref(SCHEMA_REF_PREFIX + "ScimError"))));
     }
 }

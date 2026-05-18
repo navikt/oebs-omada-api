@@ -40,7 +40,7 @@ class ScimUserResourceProviderRetcodeTest {
     }
 
     @ParameterizedTest(name = "retcode={0} → 500")
-    @ValueSource(strings = {"3", "99", "UKJENT", "FEIL"})
+    @ValueSource(strings = {"3", "99", "700", "UKJENT", "FEIL"})
     void retcode_over2_eller_ugyldig_gir_500(String retcode) {
         assertThat(mapSyncRetcodeToHttpStatus(retcode)).isEqualTo(500);
     }
@@ -150,6 +150,16 @@ class ScimUserResourceProviderRetcodeTest {
     @Test
     void null_phase_og_status_er_ikke_pending() {
         assertThat(isSyncPending(syncResult("0", null, null))).isFalse();
+    }
+
+    @Test
+    void null_retcode_med_pending_phase_og_status_gir_pending() {
+        assertThat(isSyncPending(syncResult(null, "PENDING", "NORMAL"))).isTrue();
+    }
+
+    @Test
+    void ugyldig_retcode_er_ikke_pending() {
+        assertThat(isSyncPending(syncResult("ikke_tall", "PENDING", "NORMAL"))).isFalse();
     }
 }
 

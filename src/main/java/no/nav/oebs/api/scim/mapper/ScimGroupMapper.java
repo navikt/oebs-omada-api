@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class ScimGroupMapper {
@@ -40,7 +39,7 @@ public class ScimGroupMapper {
                     }
                     return member;
                 })
-                .collect(Collectors.toList());
+                .toList();
             group.setMembers(scimMembers);
         }
 

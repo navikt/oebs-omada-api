@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -179,6 +180,20 @@ class ScimUserMapperTest {
         assertThat(user.getMeta().getLocation())
                 .isEqualTo(BASE_URL + "/scim/v2/Users/S123456");
         assertThat(user.getMeta().getResourceType()).isEqualTo("User");
+    }
+
+    @Test
+    void toScimUser_mapsMetaDates() {
+        ScimUserEntity entity = enBruker();
+        LocalDateTime created = LocalDateTime.of(2024, 1, 2, 3, 4, 5);
+        LocalDateTime updated = LocalDateTime.of(2025, 6, 7, 8, 9, 10);
+        entity.setCreationDate(created);
+        entity.setLastUpdateDate(updated);
+
+        ScimUser user = mapper.toScimUser(entity, List.of());
+
+        assertThat(user.getMeta().getCreated()).isEqualTo(created);
+        assertThat(user.getMeta().getLastModified()).isEqualTo(updated);
     }
 
     // --- Hjelpemetode ---

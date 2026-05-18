@@ -25,6 +25,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StartupLogger {
 
+    private static final String LOG_SEPARATOR = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+    private static final String STATUS_REGISTERED = "✓ registrert";
+    private static final String STATUS_MISSING = "✗ MANGLER";
+    private static final String OEBS_ENV_KEY = "OEBS_ENV";
+
     private final ApplicationContext applicationContext;
     private final ConfigurableEnvironment environment;
 
@@ -34,7 +39,6 @@ public class StartupLogger {
         if (event.getApplicationContext().getParent() != null) {
             return;
         }
-        logEnvironment();
         logActiveProfile();
     }
 
@@ -54,7 +58,7 @@ public class StartupLogger {
         String appName    = environment.getProperty("APP_NAME",    "oebs-omada-api");
         String appVersion = environment.getProperty("APP_VERSION", "?");
         String appUpdate  = environment.getProperty("APP_UPDATE",  "?");
-        String oebsEnv    = environment.getProperty("OEBS_ENV",    "LOCAL");
+        String oebsEnv    = environment.getProperty(OEBS_ENV_KEY,    "LOCAL");
         int    port       = Integer.parseInt(environment.getProperty("server.port", "8080"));
 
         log.info("╔══════════════════════════════════════════════════════╗");
@@ -73,17 +77,7 @@ public class StartupLogger {
         log.info("► Aktive profiler  : {}", profiles.length > 0 ? Arrays.toString(profiles) : "[default]");
         log.info("► Default profiler : {}", Arrays.toString(environment.getDefaultProfiles()));
     }
-
-    private void logEnvironment() {
-        log.info("━━━ Miljøvariabler (applikasjon) ━━━━━━━━━━━━━━━━━━━━━━");
-        logMasked("DB_URL",              safeProperty("DB_URL"));
-        logMasked("DB_USER",             safeProperty("APPS_USER"));
-        logMasked("OEBS_ENV",            safeProperty("OEBS_ENV"));
-        logMasked("AZURE_DISCOVERY_URL", safeProperty("no.nav.security.jwt.issuer.azure.discovery-url"));
-        logMasked("AZURE_AUDIENCE",      safeProperty("no.nav.security.jwt.issuer.azure.accepted-audience"));
-        log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    }
-
+    
     private void logServletMappings(ApplicationReadyEvent event) {
         log.info("━━━ Registrerte Servlets ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         try {
@@ -107,7 +101,7 @@ public class StartupLogger {
         } catch (RuntimeException e) {
             log.warn("  Kunne ikke lese servlet-registreringer: {}", e.getMessage());
         }
-        log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        log.info(LOG_SEPARATOR);
     }
 
     private void logScimStatus() {
@@ -115,14 +109,14 @@ public class StartupLogger {
         boolean scimpleActive = applicationContext.containsBean("scimpleServlet");
         boolean registryActive = applicationContext.containsBean("repositoryRegistry");
         boolean schemaActive = applicationContext.containsBean("schemaRegistry");
-        log.info("  ScimpleServlet bean     : {}", scimpleActive   ? "✓ registrert" : "✗ MANGLER");
-        log.info("  RepositoryRegistry bean : {}", registryActive  ? "✓ registrert" : "✗ MANGLER");
-        log.info("  SchemaRegistry bean     : {}", schemaActive     ? "✓ registrert" : "✗ MANGLER");
+        log.info("  ScimpleServlet bean     : {}", scimpleActive   ? STATUS_REGISTERED : STATUS_MISSING);
+        log.info("  RepositoryRegistry bean : {}", registryActive  ? STATUS_REGISTERED : STATUS_MISSING);
+        log.info("  SchemaRegistry bean     : {}", schemaActive     ? STATUS_REGISTERED : STATUS_MISSING);
         if (!scimpleActive) {
             log.warn("  ⚠ SCIMple-servlet er ikke aktiv — DataSource tilgjengelig? {}",
                     applicationContext.containsBean("dataSource"));
         }
-        log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        log.info(LOG_SEPARATOR);
     }
 
     private void logSummary() {
@@ -139,29 +133,6 @@ public class StartupLogger {
         log.info("► SCIM v2     : /scim/v2/Schemas");
         log.info("► Health      : /internal/isalive");
         log.info("► Actuator    : /actuator/health");
-    }
-
-    /** Leser en property uten å kaste exception hvis verdien inneholder en uresolvable placeholder. */
-    private String safeProperty(String key) {
-        try {
-            return environment.getProperty(key, "<ikke satt>");
-        } catch (IllegalArgumentException e) {
-            return "<ikke tilgjengelig: " + e.getMessage() + ">";
-        }
-    }
-
-    private void logMasked(String key, String value) {
-        if (value == null) {
-            log.info("  {} = <ikke satt>", key);
-            return;
-        }
-        String lower = key.toLowerCase();
-        if (lower.contains("password") || lower.contains("passord") ||
-                lower.contains("secret") || lower.contains("pwd")) {
-            log.info("  {} = ****", key);
-        } else {
-            log.info("  {} = {}", key, value);
-        }
     }
 
     private static String padRight(String s) {

@@ -17,6 +17,7 @@ import org.apache.directory.scim.spec.filter.SortRequest;
 import org.apache.directory.scim.spec.filter.attribute.AttributeReference;
 import org.apache.directory.scim.spec.patch.PatchOperation;
 import org.apache.directory.scim.spec.resources.ScimGroup;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +35,12 @@ import java.util.Set;
 @Component
 @RequiredArgsConstructor
 public class ScimGroupResourceProvider implements Repository<ScimGroup> {
+
+    @Value("${oebs.scim.groups-path:/scim/v2/Groups}")
+    private String scimGroupsPath = "/scim/v2/Groups";
+
+    @Value("${oebs.scim.group-item-path-prefix:/scim/v2/Groups/}")
+    private String scimGroupsItemPathPrefix = "/scim/v2/Groups/";
 
     private final ScimGroupService groupService;
     private final KallLoggHelper kallLoggHelper;
@@ -53,16 +60,16 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
             Optional<ScimGroup> group = groupService.getGroup(id);
             long kalltid = System.currentTimeMillis() - startTid;
             if (group.isEmpty()) {
-                kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 404, kalltid, null, "Group not found");
+                kallLoggHelper.loggInn(KallLogg.METHOD_GET, groupPath(id), 404, kalltid, null, "Group not found");
                 return null;
             }
             String responseJson = toJson(group.get());
-            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 200, kalltid, responseJson, null);
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, groupPath(id), 200, kalltid, responseJson, null);
             return group.get();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             long kalltid = System.currentTimeMillis() - startTid;
             log.error("GET Group FEIL: id={}", id, e);
-            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups/" + id, 500, kalltid,
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, groupPath(id), 500, kalltid,
                     errorJson(500, e.getMessage()), null);
             throw new ResourceException(500, "Intern feil: " + e.getMessage());
         }
@@ -78,21 +85,21 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
         try {
             Page<ScimGroup> groupPage = groupService.getGroups(startIndex, count);
             long kalltid = System.currentTimeMillis() - startTid;
-            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups", 200, kalltid, null,
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, scimGroupsPath, 200, kalltid, null,
                     "totalResults=" + groupPage.getTotalElements() + " returnert=" + groupPage.getNumberOfElements());
             return new FilterResponse<>(groupPage.getContent(), pageRequest, (int) groupPage.getTotalElements());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             long kalltid = System.currentTimeMillis() - startTid;
             log.error("LIST Groups FEIL", e);
-            kallLoggHelper.loggInn(KallLogg.METHOD_GET, "/scim/v2/Groups", 500, kalltid,
+            kallLoggHelper.loggInn(KallLogg.METHOD_GET, scimGroupsPath, 500, kalltid,
                     errorJson(500, e.getMessage()), null);
-            throw new RuntimeException("Intern feil: " + e.getMessage(), e);
+            throw new IllegalStateException("Intern feil: " + e.getMessage(), e);
         }
     }
 
     @Override
     public ScimGroup create(ScimGroup resource) throws ResourceException {
-        kallLoggHelper.loggInn(KallLogg.METHOD_POST, "/scim/v2/Groups", 405, 0,
+        kallLoggHelper.loggInn(KallLogg.METHOD_POST, scimGroupsPath, 405, 0,
                 errorJson(405, "Groups er read-only — POST ikke støttet"), null);
         throw new ResourceException(405, "Groups er read-only — POST ikke støttet");
     }
@@ -101,7 +108,7 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     public ScimGroup update(String id, String version, ScimGroup resource,
                             Set<AttributeReference> includedAttributes,
                             Set<AttributeReference> excludedAttributes) throws ResourceException {
-        kallLoggHelper.loggInn(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id, 405, 0,
+        kallLoggHelper.loggInn(KallLogg.METHOD_PUT, groupPath(id), 405, 0,
                 errorJson(405, "Groups er read-only — PUT ikke støttet"), null);
         throw new ResourceException(405, "Groups er read-only — PUT ikke støttet");
     }
@@ -110,16 +117,20 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     public ScimGroup patch(String id, String version, List<PatchOperation> patchOperations,
                            Set<AttributeReference> includedAttributes,
                            Set<AttributeReference> excludedAttributes) throws ResourceException {
-        kallLoggHelper.loggInn(KallLogg.METHOD_PUT, "/scim/v2/Groups/" + id, 405, 0,
+        kallLoggHelper.loggInn(KallLogg.METHOD_PUT, groupPath(id), 405, 0,
                 errorJson(405, "Groups er read-only — PATCH ikke støttet"), null);
         throw new ResourceException(405, "Groups er read-only — PATCH ikke støttet");
     }
 
     @Override
     public void delete(String id) throws ResourceException {
-        kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, "/scim/v2/Groups/" + id, 405, 0,
+        kallLoggHelper.loggInn(KallLogg.METHOD_DELETE, groupPath(id), 405, 0,
                 errorJson(405, "Groups er read-only — DELETE ikke støttet"), null);
         throw new ResourceException(405, "Groups er read-only — DELETE ikke støttet");
+    }
+
+    private String groupPath(String id) {
+        return scimGroupsItemPathPrefix + id;
     }
 
     private String toJson(Object obj) {
@@ -144,5 +155,3 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
         }
     }
 }
-
-

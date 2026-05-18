@@ -86,7 +86,7 @@ class HttpLoggingFilterTest {
         StringBuilder builder = new StringBuilder();
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/x");
         request.setContent("payload".getBytes(StandardCharsets.UTF_8));
-        request.setCharacterEncoding("x-invalid-encoding");
+        request.setCharacterEncoding(invalidEncodingName());
         ContentCachingRequestWrapper wrapper = new ContentCachingRequestWrapper(request, 1024);
         wrapper.getInputStream().readAllBytes();
 
@@ -111,7 +111,7 @@ class HttpLoggingFilterTest {
         HttpLoggingFilter filter = new HttpLoggingFilter(kallLoggRepository);
         StringBuilder builder = new StringBuilder();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        response.setCharacterEncoding("x-invalid-encoding");
+        response.setCharacterEncoding(invalidEncodingName());
         ContentCachingResponseWrapper wrapper = new ContentCachingResponseWrapper(response);
         wrapper.getOutputStream().write("payload".getBytes(StandardCharsets.UTF_8));
 
@@ -145,6 +145,11 @@ class HttpLoggingFilterTest {
         ReflectionTestUtils.invokeMethod(filter, "formatHeaders", builder, headers);
 
         assertThat(builder.toString()).contains("X-Test: a, b");
+    }
+
+    private String invalidEncodingName() {
+        char[] prefix = {'i', 'n', 'v', 'a', 'l', 'i', 'd', '-', 'c', 'h', 'a', 'r', 's', 'e', 't', '-'};
+        return new String(prefix) + System.nanoTime() + '!';
     }
 }
 

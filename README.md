@@ -12,6 +12,8 @@ Implementerer SCIM 2.0-grensesnitt for synkronisering av brukere og grupper.
 - [Kjøring](#kjøring)
 - [SCIM 2.0 endepunkter](#scim-20-endepunkter)
 - [Testdata](#testdata)
+- [Branch-strategi](#branch-strategi)
+- [CI/CD og deploy](#cicd-og-deploy)
 - [Miljøer](#miljøer)
 
 ---
@@ -21,7 +23,7 @@ Implementerer SCIM 2.0-grensesnitt for synkronisering av brukere og grupper.
 | Hva | Versjon |
 |---|---|
 | Java | 21 |
-| Spring Boot | 4.0.0 |
+| Spring Boot | 4.0.6 |
 | Apache SCIMple | 1.0.0-M1 |
 | Oracle JDBC | 23.x |
 | Jetty | 12.1.6 |
@@ -46,22 +48,10 @@ Applikasjonen er tett koblet mot Oracle E-Business Suite og kan **ikke** kjøres
 
 **Alternativ 1 — Koble til OeBS-databasen direkte (anbefalt)**
 
-Krever GSA. Sett `DB_URL` til ønsket miljø (u1, q1 eller t1) via `.env`-filen.
+Krever GSA. Sett `DB_URL` til ønsket miljø (u1, q1 eller prod) via `.env`-filen.
 Credentials hentes fra Vault eller en kollega.
 
-**Alternativ 2 — SSH-tunnel via jumper**
-
-Hvis du vil isolere trafikken eller jobber fra et annet nettverk:
-
-```bash
-# Åpne tunnel mot u1 på lokal port 1522
-ssh -L 1522:<db-host>:1521 <jumper-host> -N &
-
-# Sett DB_URL til tunnelen
-DB_URL=jdbc:oracle:thin:@localhost:1522/oebsu1
-```
-
-**Alternativ 3 — Mock tjenestelaget (kun UI/API-utvikling)**
+**Alternativ 2 — Mock tjenestelaget (kun UI/API-utvikling)**
 
 Hvis du kun jobber med API-strukturen og ikke trenger ekte data, kan du
 lage en Spring-profil `mock` som erstatter repository-implementasjonene
@@ -222,6 +212,28 @@ Ingen body — id hentes fra URL.
 
 ---
 
+## Branch-strategi
+
+Vi bruker én varig branch: `main`.
+
+- Alt arbeid gjøres i korte feature-brancher
+- Endringer merges til `main` via pull request
+- Vi bruker ikke miljøspesifikke brancher
+
+---
+
+## CI/CD og deploy
+
+Deploy styres fra `/.github/workflows/build-deploy.yaml`.
+
+- `pull_request` mot `main`: bygger, kjører tester og kjører Sonar
+- `push` til `main`: bygger, kjører Sonar og deployer til prod
+- `workflow_dispatch`: manuell deploy til `u1`, `q1` eller `prod`
+
+Når du kjører manuell deploy, velg ønsket miljø i `environment`-input.
+
+---
+
 ## Miljøer
 
 | Miljø | URL | NAIS secret |
@@ -229,6 +241,5 @@ Ingen body — id hentes fra URL.
 | Lokal | `http://localhost:8080` | — |
 | u1 (dev) | `https://oebs-omada-api-u1.intern.dev.nav.no` | `oebs-omada-u1` |
 | q1 (dev) | `https://oebs-omada-api-q1.intern.dev.nav.no` | `oebs-omada-q1` |
-| t1 (dev) | `https://oebs-omada-api-t1.intern.dev.nav.no` | `oebs-omada-t1` |
 | prod | `https://oebs-omada-api.intern.nav.no` | `oebs-omada` |
 

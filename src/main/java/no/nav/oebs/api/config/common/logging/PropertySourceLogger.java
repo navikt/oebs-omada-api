@@ -2,6 +2,7 @@ package no.nav.oebs.api.config.common.logging;
 
 
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -88,6 +89,14 @@ public class PropertySourceLogger {
     }
 
     private String maskIfPassword(String key, String value) {
-        return (key.toLowerCase().matches(".*(passw?ord|secret|ocp).*")) ? "********" : value;
+        String lowerKey = key.toLowerCase(Locale.ROOT);
+        boolean containsSecretPattern = lowerKey.contains("password")
+                || lowerKey.contains("passord")
+                || lowerKey.contains("secret")
+                || lowerKey.contains("ocp");
+        if (containsSecretPattern) {
+            return "********";
+        }
+        return value;
     }
 }

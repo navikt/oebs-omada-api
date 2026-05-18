@@ -12,13 +12,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import no.nav.oebs.api.db.entity.ApiError;
 import no.nav.oebs.api.common.utils.ResponseEntityBuilder;
 
-// import javax.security.sasl.AuthenticationException;
-//import javax.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO: gå gjennom feilsituasjoner legge til flere
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -48,7 +45,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     // handleConstraintViolationException : triggers when @Validated fails
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<?> handleConstraintViolationException(Exception ex) {
+    public ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException ex) {
 
         List<String> details = new ArrayList<>();
         details.add(ex.getMessage());
@@ -57,22 +54,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return ResponseEntityBuilder.build(err);
     }
-
-/*
-    @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<Object> handleNullPointerException(NullPointerException ex) {
-
-        List<String> details = new ArrayList<>();
-        details.add(ex.getLocalizedMessage());
-
-        GenericResponse response = new GenericResponse();
-        response.setMessage("Internal error occurred: " + ex.getStackTrace());
-        System.out.println("Big exceptions");
-        HttpHeaders headers = new HttpHeaders();
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        return new ResponseEntity<>(response, headers, status);
-    }
-*/
 
     // @ExceptionHandler({ Exception.class })
     public ResponseEntity<Object> handleAll(Exception ex) {
@@ -85,37 +66,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntityBuilder.build(err);
 
     }
-
-    /*@ExceptionHandler({ AuthenticationException.class })
-    @ResponseBody
-    public ResponseEntity<Object> handleAuthenticationException(Exception ex) {
-
-        List<String> details = new ArrayList<String>();
-        details.add(ex.getLocalizedMessage());
-
-        if (ex.getMessage().contains("JwtTokenUnauthorizedException")) {
-            ApiError err = new ApiError(LocalDateTime.now(),HttpStatus.BAD_REQUEST,"Token validation failed" ,details);
-            return ResponseEntityBuilder.build(err);
-        } else {
-            ApiError err = new ApiError(LocalDateTime.now(),HttpStatus.BAD_REQUEST,"generell feil" ,details);
-            return ResponseEntityBuilder.build(err);
-        }
-    }*/
-
-  /*  @ExceptionHandler({ Exception.class })
-    public ResponseEntity<Object> handleJwtTokenUnauthorizedException(Exception ex) {
-
-        List<String> details = new ArrayList<String>();
-        details.add(ex.getLocalizedMessage());
-
-        if (ex.getMessage().contains("JwtTokenUnauthorizedException")) {
-            ApiError err = new ApiError(LocalDateTime.now(),HttpStatus.BAD_REQUEST,"Token validation failed" ,details);
-            return ResponseEntityBuilder.build(err);
-        } else {
-            ApiError err = new ApiError(LocalDateTime.now(),HttpStatus.BAD_REQUEST,"generell feil" ,details);
-            return ResponseEntityBuilder.build(err);
-        }
-    }*/
 
     // @ExceptionHandler({ Exception.class })
     @ExceptionHandler({ PlsqlException.class })

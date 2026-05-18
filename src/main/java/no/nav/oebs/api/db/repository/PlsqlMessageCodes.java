@@ -2,7 +2,6 @@ package no.nav.oebs.api.db.repository;
 
 public class PlsqlMessageCodes {
 
-	//TODO: Se på feilsituasjoner
 	private PlsqlMessageCodes() {
 	}
 

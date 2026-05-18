@@ -62,21 +62,21 @@ jobs:
 
       - name: deploy to u1
         if: (github.event_name == 'workflow_dispatch' && inputs.environment == 'u1') || (github.event_name == 'push' && steps.changed.outputs.u1 == 'true' && (github.ref == 'refs/heads/dev/u1' || github.ref == 'refs/heads/main'))
-        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2 
+        uses: nais/deploy/actions/deploy@a7f8690f9b367fcbf5348a0a1e21d44f1aae50eb 
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-fss
           RESOURCE: .nais/alert-u1.yaml
       - name: deploy to q1
         if: (github.event_name == 'workflow_dispatch' && inputs.environment == 'q1') || (github.event_name == 'push' && steps.changed.outputs.q1 == 'true' && (github.ref == 'refs/heads/dev/q1' || github.ref == 'refs/heads/main'))
-        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2
+        uses: nais/deploy/actions/deploy@a7f8690f9b367fcbf5348a0a1e21d44f1aae50eb
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-fss
           RESOURCE: .nais/alert-q1.yaml
       - name: deploy to prod
         if: (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod') || (github.event_name == 'push' && steps.changed.outputs.prod == 'true' && github.ref == 'refs/heads/main')
-        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2 
+        uses: nais/deploy/actions/deploy@a7f8690f9b367fcbf5348a0a1e21d44f1aae50eb 
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-fss

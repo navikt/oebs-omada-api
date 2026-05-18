@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -132,6 +133,39 @@ class ScimUserResourceProviderTest {
     }
 
     @Test
+    void create_throws500_whenProcedureRuntimeFails() {
+        ScimUser resource = new ScimUser();
+        resource.setId("K500");
+        resource.setUserName("ABC1234");
+
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.NY), anyString()))
+                .thenThrow(new RuntimeException("db down"));
+
+        ResourceException ex = assertThrows(ResourceException.class, () -> provider.create(resource));
+
+        assertThat(ex.getStatus()).isEqualTo(500);
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_POST), eq("/scim/v2/Users"), eq(500), anyLong(), anyString(), contains("\"status\":\"500\""), eq(null));
+    }
+
+    @Test
+    void create_throws500_whenSyncProcedureFails() {
+        ScimUser resource = new ScimUser();
+        resource.setId("KSYNC");
+        resource.setUserName("ABC1234");
+
+        ReflectionTestUtils.setField(provider, "syncEnabled", true);
+
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.NY), anyString()))
+                .thenReturn(new PlsqlProcedureResult(null, 0, "ok", 42L, "0"));
+        when(plsqlRepository.executeSyncProcedure(any(), eq(42L))).thenThrow(new RuntimeException("sync down"));
+
+        ResourceException ex = assertThrows(ResourceException.class, () -> provider.create(resource));
+
+        assertThat(ex.getStatus()).isEqualTo(500);
+        assertThat(ex.getMessage()).contains("Intern feil");
+    }
+
+    @Test
     void update_throws400_whenResourceIsNull() {
         ResourceException ex = assertThrows(ResourceException.class,
                 () -> provider.update("K123456", null, null, null, null));
@@ -140,11 +174,37 @@ class ScimUserResourceProviderTest {
     }
 
     @Test
+    void update_throws500_whenProcedureRuntimeFails() {
+        ScimUser resource = new ScimUser();
+        resource.setUserName("ABC1234");
+
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.ENDRE), anyString()))
+                .thenThrow(new RuntimeException("db down"));
+
+        ResourceException ex = assertThrows(ResourceException.class,
+                () -> provider.update("K500", null, resource, null, null));
+
+        assertThat(ex.getStatus()).isEqualTo(500);
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_PUT), eq("/scim/v2/Users/K500"), eq(500), anyLong(), anyString(), contains("\"status\":\"500\""), eq(null));
+    }
+
+    @Test
     void delete_doesNotThrow_whenProcedureSucceeds() {
         when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.SLETTE), anyString()))
                 .thenReturn(new PlsqlProcedureResult(null, 0, "ok", null, "0"));
 
         assertDoesNotThrow(() -> provider.delete("K123456"));
+    }
+
+    @Test
+    void delete_throws500_whenProcedureRuntimeFails() {
+        when(plsqlRepository.executeInOutProcedure(any(), eq(PlsqlProcedureRepository.Operasjon.SLETTE), anyString()))
+                .thenThrow(new RuntimeException("db down"));
+
+        ResourceException ex = assertThrows(ResourceException.class, () -> provider.delete("K500"));
+
+        assertThat(ex.getStatus()).isEqualTo(500);
+        verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_DELETE), eq("/scim/v2/Users/K500"), eq(500), anyLong(), anyString(), contains("\"status\":\"500\""), eq(null));
     }
 }
 

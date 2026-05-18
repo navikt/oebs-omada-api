@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,6 +65,20 @@ class ScimGroupMapperTest {
         ScimGroupMembershipEntity m2 = new ScimGroupMembershipEntity();
         m2.setNavId("S222222");
         assertThat(mapper.toScimGroup(enGruppe(), List.of(m1, m2)).getMembers()).hasSize(2);
+    }
+
+    @Test
+    void toScimGroup_mapsMetaDates() {
+        ScimGroupEntity entity = enGruppe();
+        LocalDateTime created = LocalDateTime.of(2024, 1, 2, 3, 4, 5);
+        LocalDateTime updated = LocalDateTime.of(2025, 6, 7, 8, 9, 10);
+        entity.setOpprettetDato(created);
+        entity.setSistOppdatert(updated);
+
+        ScimGroup group = mapper.toScimGroup(entity, List.of());
+
+        assertThat(group.getMeta().getCreated()).isEqualTo(created);
+        assertThat(group.getMeta().getLastModified()).isEqualTo(updated);
     }
 
     private ScimGroupEntity enGruppe() {

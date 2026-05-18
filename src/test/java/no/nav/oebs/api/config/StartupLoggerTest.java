@@ -3,14 +3,18 @@ package no.nav.oebs.api.config;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import jakarta.servlet.ServletContext;
 import java.lang.management.ManagementFactory;
+import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -101,6 +105,48 @@ class StartupLoggerTest {
             mocked.when(ManagementFactory::getRuntimeMXBean).thenThrow(new RuntimeException("mx fail"));
             assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(logger, "logSummary"));
         }
+    }
+
+    @Test
+    void logServletMappings_handlesEmptyRegistrations() {
+        ApplicationContext applicationContext = mock(ApplicationContext.class);
+        ConfigurableEnvironment environment = new MockEnvironment();
+        StartupLogger logger = new StartupLogger(applicationContext, environment);
+
+        ServletContext servletContext = mock(ServletContext.class);
+        when(servletContext.getServletRegistrations()).thenReturn(Map.of());
+
+        ServletWebServerApplicationContext webContext = mock(ServletWebServerApplicationContext.class);
+        when(webContext.getServletContext()).thenReturn(servletContext);
+
+        ApplicationReadyEvent event = mock(ApplicationReadyEvent.class);
+        when(event.getApplicationContext()).thenReturn(webContext);
+
+        assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(logger, "logServletMappings", event));
+    }
+
+    @Test
+    void logServletMappings_handlesNullServletContext() {
+        ApplicationContext applicationContext = mock(ApplicationContext.class);
+        ConfigurableEnvironment environment = new MockEnvironment();
+        StartupLogger logger = new StartupLogger(applicationContext, environment);
+
+        ServletWebServerApplicationContext webContext = mock(ServletWebServerApplicationContext.class);
+        when(webContext.getServletContext()).thenReturn(null);
+
+        ApplicationReadyEvent event = mock(ApplicationReadyEvent.class);
+        when(event.getApplicationContext()).thenReturn(webContext);
+
+        assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(logger, "logServletMappings", event));
+    }
+
+    @Test
+    void padRight_handlesNullAndLongInput() {
+        String padded = ReflectionTestUtils.invokeMethod(StartupLogger.class, "padRight", (String) null);
+        String truncated = ReflectionTestUtils.invokeMethod(StartupLogger.class, "padRight", "x".repeat(50));
+
+        assertThat(padded).hasSize(36).isEqualTo(" ".repeat(36));
+        assertThat(truncated).hasSize(36).isEqualTo("x".repeat(36));
     }
 }
 

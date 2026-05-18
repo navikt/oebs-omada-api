@@ -1,5 +1,7 @@
 package no.nav.oebs.api.scim.provider;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import no.nav.oebs.api.db.entity.KallLogg;
 import no.nav.oebs.api.scim.KallLoggHelper;
 import no.nav.oebs.api.scim.service.ScimGroupService;
@@ -14,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +27,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -133,6 +138,37 @@ class ScimGroupResourceProviderTest {
         ResourceException ex = assertThrows(ResourceException.class, () -> provider.delete("G$1234"));
         assertThat(ex.getStatus()).isEqualTo(405);
         verify(kallLoggHelper).loggInn(eq(KallLogg.METHOD_DELETE), eq("/scim/v2/Groups/G$1234"), eq(405), eq(0L), contains("ikke st\u00f8ttet"), eq(null));
+    }
+
+    @Test
+    void toJson_returnsNull_whenSerializationFails() throws Exception {
+        ObjectMapper failingMapper = mock(ObjectMapper.class);
+        doThrow(new JsonProcessingException("boom") {
+        }).when(failingMapper).writeValueAsString(any());
+        ReflectionTestUtils.setField(provider, "objectMapper", failingMapper);
+
+        String result = ReflectionTestUtils.invokeMethod(provider, "toJson", new Object());
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void errorJson_returnsUnknownDetail_whenDetailIsNull() {
+        String result = ReflectionTestUtils.invokeMethod(provider, "errorJson", 500, null);
+
+        assertThat(result).contains("\"detail\":\"Ukjent feil\"");
+    }
+
+    @Test
+    void errorJson_returnsFallbackJson_whenSerializationFails() throws Exception {
+        ObjectMapper failingMapper = mock(ObjectMapper.class);
+        doThrow(new JsonProcessingException("boom") {
+        }).when(failingMapper).writeValueAsString(any());
+        ReflectionTestUtils.setField(provider, "objectMapper", failingMapper);
+
+        String result = ReflectionTestUtils.invokeMethod(provider, "errorJson", 500, "boom");
+
+        assertThat(result).contains("\"status\":\"500\"").contains("Ukjent feil");
     }
 }
 

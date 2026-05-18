@@ -45,7 +45,7 @@ public class ScimGroupResourceProvider implements Repository<ScimGroup> {
     private final ScimGroupService groupService;
     private final KallLoggHelper kallLoggHelper;
 
-    private static final ObjectMapper objectMapper = JsonMapper.builder().findAndAddModules().build();
+    private ObjectMapper objectMapper = JsonMapper.builder().findAndAddModules().build();
 
     @Override
     public Class<ScimGroup> getResourceClass() {

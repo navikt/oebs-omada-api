@@ -51,11 +51,14 @@ public class PropertySourceLogger {
         Properties properties = (Properties) propertySource.getSource();
         TreeMap<String, String> sortedProperties = sortPropertiesByKey(properties);
 
-        StringBuilder builder = new StringBuilder("Gjeldende verdier i propertyfil: " + propertySourceName);
+        StringBuilder builder = new StringBuilder("Gjeldende verdier i propertyfil: ");
+        builder.append(propertySourceName);
 
         for (Map.Entry<String, String> entry : sortedProperties.entrySet()) {
             builder.append('\n');
-            builder.append(entry.getKey() + "=" + maskIfPassword(entry.getKey(), entry.getValue()));
+            builder.append(entry.getKey());
+            builder.append('=');
+            builder.append(maskIfPassword(entry.getKey(), entry.getValue()));
         }
 
         logger.info("{}", builder);
@@ -85,6 +88,6 @@ public class PropertySourceLogger {
     }
 
     private String maskIfPassword(String key, String value) {
-        return (key.toLowerCase().matches(".*(pass[w]?ord|secret|ocp).*")) ? "********" : value;
+        return (key.toLowerCase().matches(".*(passw?ord|secret|ocp).*")) ? "********" : value;
     }
 }

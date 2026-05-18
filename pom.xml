@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>no.nav.oebs</groupId>
-    <artifactId>oebs-template-api</artifactId>
+    <artifactId>oebs-omada-api</artifactId>
     <version>0.4.6</version>
     <parent>
         <groupId>org.springframework.boot</groupId>

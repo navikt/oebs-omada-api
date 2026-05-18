@@ -21,7 +21,7 @@ public class LoggingUtils {
 
 	public static String maskIfFnr(String text) {
 		return text != null //
-				? text.replaceAll("([^0-9]+|^)([0-9]{2})[0-9]{7}([0-9]{2})([^0-9]+|$)", "$1$2" + "*******" + "$3$4") //
+				? text.replaceAll("(\\D+|^)(\\d{2})\\d{7}(\\d{2})(\\D+|$)", "$1$2" + "*******" + "$3$4") //
 				: "(null)";
 	}
 }

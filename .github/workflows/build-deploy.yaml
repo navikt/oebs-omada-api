@@ -2,11 +2,9 @@ name: Build and push and deploy
 on:
   push:
     branches:
-      - 'dev/**'
       - 'main'
   pull_request:
     branches:
-      - 'dev/**'
       - 'main'
   workflow_dispatch:
     inputs:
@@ -28,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -36,14 +36,27 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       - name: Build with Maven
-        run: mvn package -DskipTests --settings .github/maven-settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mvn -B verify -Pcoverage --settings .github/maven-settings.xml
 
-      - uses: nais/docker-build-push@be85229e81c0293c265c646c084f05317fb6e0d2 # v0
+      - name: Sonar analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.qualitygate.wait=true --settings .github/maven-settings.xml
+
+      - uses: nais/docker-build-push@751a312f0803eb96a05a41fadf51be19b7be362c # v0
         id: docker-push
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
         with:
           team: team-oebs
           tenant: nav
@@ -58,24 +71,24 @@ jobs:
           salsa: true
 
       - name: Deploy til U1
-        if: startsWith(github.ref, 'refs/heads/dev/u1') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'u1')
-        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2
+        if: github.event_name == 'workflow_dispatch' && inputs.environment == 'u1'
+        uses: nais/deploy/actions/deploy@a7f8690f9b367fcbf5348a0a1e21d44f1aae50eb
         env:
           CLUSTER: dev-fss
           RESOURCE: .nais/nais-u1.yaml
           IMAGE: ${{ steps.docker-push.outputs.image }}
 
       - name: Deploy til Q1
-        if: startsWith(github.ref, 'refs/heads/dev/q1') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'q1')
-        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2
+        if: github.event_name == 'workflow_dispatch' && inputs.environment == 'q1'
+        uses: nais/deploy/actions/deploy@a7f8690f9b367fcbf5348a0a1e21d44f1aae50eb
         env:
           CLUSTER: dev-fss
           RESOURCE: .nais/nais-q1.yaml
           IMAGE: ${{ steps.docker-push.outputs.image }}
 
       - name: Deploy til produksjon
-        if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
-        uses: nais/deploy/actions/deploy@823ec9b7e305ce7cf911d0f9a25f7da9d7486cf2
+        if: github.ref == 'refs/heads/main' && ((github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'))
+        uses: nais/deploy/actions/deploy@a7f8690f9b367fcbf5348a0a1e21d44f1aae50eb
         env:
           CLUSTER: prod-fss
           RESOURCE: .nais/nais-p.yaml

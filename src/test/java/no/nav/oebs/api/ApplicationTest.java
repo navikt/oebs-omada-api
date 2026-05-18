@@ -1,4 +1,7 @@
-import no.nav.oebs.api.Application;
+package no.nav.oebs.api;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import no.nav.oebs.api.db.repository.KallLoggRepository;
 import no.nav.oebs.api.db.repository.KallLoggRepositoryImpl;
 import no.nav.oebs.api.db.repository.PlsqlProcedureRepository;
@@ -7,6 +10,7 @@ import no.nav.oebs.api.scim.repository.ScimGroupRepository;
 import no.nav.oebs.api.scim.repository.ScimUserRepository;
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -43,6 +47,7 @@ class ApplicationTest {
 
 
     @Test
-    void applicationContextShouldLoad() {
+    void applicationContextShouldLoad(ApplicationContext context) {
+        assertNotNull(context);
     }
 }

@@ -17,27 +17,24 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
         <surefire.argLine>-Dfile.encoding=UTF-8 -Xshare:off -XX:+EnableDynamicAgentLoading --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED</surefire.argLine>
         <surefire.coverage.argLine/>
+        <sonar.organization>navikt</sonar.organization>
+        <sonar.projectKey>navikt_oebs-omada-api</sonar.projectKey>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 
         <!-- NAV artifacts -->
         <token-validation.version>6.0.7</token-validation.version>
         <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version>
         <springdoc-openapi.version>3.0.3</springdoc-openapi.version>
         <lombok-version>1.18.46</lombok-version>
-
-        <!-- CVE-fixes via Spring Boot BOM property overrides -->
-        <!-- CVE-2026-22737, CVE-2026-22735: Spring MVC script view path traversal og SSE stream corruption. Fikset i 7.0.6. -->
         <spring-framework.version>7.0.6</spring-framework.version>
-        <!-- CVE-2026-24400: AssertJ XXE via isXmlEqualTo. Fikset i 3.27.7. -->
         <assertj.version>3.27.7</assertj.version>
-        <!-- CVE-2026-1225: Logback arbitrary class instantiation. Fikset i 1.5.25. -->
         <logback.version>1.5.25</logback.version>
-        <!-- CVE-2025-67735: Netty CRLF injection i HttpRequestEncoder. Fikset i 4.2.8. -->
         <netty.version>4.2.8.Final</netty.version>
-        <!-- CVE-2025-66614 / CVE-2026-24733: Tomcat klientautentisering bypass. Fikset i 11.0.15. -->
         <tomcat.version>11.0.15</tomcat.version>
+        <jetty.version>12.1.9</jetty.version>
 
     </properties>
 
@@ -46,73 +43,72 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-http</artifactId>
-                <version>12.1.7</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-io</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-security</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-session</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-xml</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-alpn-client</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-annotations</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-plus</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
-            <!-- ee11-moduler må pines eksplisitt — ResponseUtils finnes kun fra 12.1.6 -->
             <dependency>
                 <groupId>org.eclipse.jetty.ee11</groupId>
                 <artifactId>jetty-ee11-servlet</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.ee11</groupId>
                 <artifactId>jetty-ee11-websocket-servlet</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.ee11</groupId>
                 <artifactId>jetty-ee11-websocket-jetty-server</artifactId>
-                <version>12.1.6</version>
+                <version>${jetty.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -288,7 +284,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
-                        <argLine>${surefire.argLine} ${surefire.coverage.argLine}</argLine>
+                        <argLine>${surefire.argLine} @{surefire.coverage.argLine}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
                 </plugin>
@@ -302,7 +298,6 @@
                 <configuration>
                     <fork>true</fork>
                     <compilerArgs>
-                        <!-- Demper sun.misc.Unsafe-advarsler fra lombok.permit.Permit i Java 21 -->
                         <arg>-J--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
                         <arg>-J--add-opens=java.base/java.lang.reflect=ALL-UNNAMED</arg>
                     </compilerArgs>
@@ -328,6 +323,51 @@
                 </configuration>
             </plugin>
         </plugins>
-
     </build>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>${surefire.argLine} @{surefire.coverage.argLine}</argLine>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.14</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <propertyName>surefire.coverage.argLine</propertyName>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <formats>
+                                        <format>XML</format>
+                                    </formats>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

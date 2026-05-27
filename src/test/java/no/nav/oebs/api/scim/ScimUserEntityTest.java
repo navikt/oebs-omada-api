@@ -60,5 +60,13 @@ class ScimUserEntityTest {
         entity.setEtterNavn("Nordmann");
         assertThat(entity.getFullName()).isEqualTo("Ola Nordmann");
     }
+
+    @Test
+    void permisjonField_canBeSetAndRead() {
+        ScimUserEntity entity = new ScimUserEntity();
+        entity.setPermisjon("PERMISJON");
+
+        assertThat(entity.getPermisjon()).isEqualTo("PERMISJON");
+    }
 }
 

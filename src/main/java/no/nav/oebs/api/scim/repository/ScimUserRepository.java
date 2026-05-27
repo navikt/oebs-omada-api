@@ -28,13 +28,13 @@ public interface ScimUserRepository extends JpaRepository<ScimUserEntity, Long> 
     /**
      * Hent alle aktive brukere (paginert)
      */
-    @Query("SELECT u FROM ScimUserEntity u WHERE u.activeFlag = 'Y' ORDER BY u.brukerId")
+    @Query("SELECT u FROM ScimUserEntity u WHERE u.activeFlag = 'Y' OR UPPER(COALESCE(u.permisjon, '')) = 'PERMISJON' ORDER BY u.brukerId")
     Page<ScimUserEntity> findAllActiveUsers(Pageable pageable);
 
 
     /**
      * Tell antall aktive brukere
      */
-    @Query("SELECT COUNT(u) FROM ScimUserEntity u WHERE u.activeFlag = 'Y'")
+    @Query("SELECT COUNT(u) FROM ScimUserEntity u WHERE u.activeFlag = 'Y' OR UPPER(COALESCE(u.permisjon, '')) = 'PERMISJON'")
     long countActiveUsers();
 }

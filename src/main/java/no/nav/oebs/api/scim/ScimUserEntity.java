@@ -49,6 +49,9 @@ public class ScimUserEntity {
     @Column(name = "ACTIVE_FLAG")
     private String activeFlag;  // Y/N
 
+    @Column(name = "PERMISJON")
+    private String permisjon;
+
     @Column(name = "LAST_UPDATE_DATE")
     private LocalDateTime lastUpdateDate;
 

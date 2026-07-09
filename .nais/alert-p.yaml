@@ -18,6 +18,7 @@ spec:
             action: "Sjekk deploystatus og pods med kubectl describe deploy/pod og kubectl logs"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: critical
 
         - alert: OebsOmadaApiProdPodRestarts
@@ -29,6 +30,7 @@ spec:
             action: "Undersok logs, OOMKill og readiness/liveness-feil"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: warning
 
         - alert: OebsOmadaApiProdHighErrorRate
@@ -47,6 +49,7 @@ spec:
             action: "Sjekk feil i logger og traces for feilede kall"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: critical
 
         - alert: OebsOmadaApiProdElevated401Rate
@@ -65,6 +68,7 @@ spec:
             action: "Sjekk tokenvalidering, issuer/audience og klientkonfig"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: warning
 
         - alert: OebsOmadaApiProdHigh401Rate
@@ -83,6 +87,7 @@ spec:
             action: "Start incident og valider auth-konfig end-to-end"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: critical
 
         - alert: OebsOmadaApiProdElevated403Rate
@@ -101,6 +106,7 @@ spec:
             action: "Sjekk roller, policy og nylige endringer i tilgangsstyring"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: warning
 
         - alert: OebsOmadaApiProdHigh403Rate
@@ -119,6 +125,6 @@ spec:
             action: "Start incident og verifiser tilgangsstyring umiddelbart"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: critical
-
 

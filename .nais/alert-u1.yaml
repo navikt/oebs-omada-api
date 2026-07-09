@@ -11,7 +11,7 @@ spec:
       rules:
         - alert: OebsOmadaApiU1InstanceDown
           expr: kube_deployment_status_replicas_available{namespace="team-oebs", deployment="oebs-omada-api-u1"} == 0
-          for: 10m
+          for: 1m
           annotations:
             summary: "oebs-omada-api-u1 har ingen tilgjengelige replicas"
             consequence: "Testmiljoet for SCIM API er utilgjengelig"
@@ -19,7 +19,7 @@ spec:
           labels:
             namespace: team-oebs
             team: team-oebs
-            severity: warning
+            severity: critical
 
         - alert: OebsOmadaApiU1PodRestarts
           expr: increase(kube_pod_container_status_restarts_total{namespace="team-oebs", pod=~"oebs-omada-api-u1-.*"}[15m]) > 2
@@ -145,5 +145,4 @@ spec:
             namespace: team-oebs
             team: team-oebs
             severity: warning
-
 

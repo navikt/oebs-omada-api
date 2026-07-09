@@ -18,6 +18,7 @@ spec:
             action: "Sjekk deploystatus og pods med kubectl describe deploy/pod og kubectl logs"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: warning
 
         - alert: OebsOmadaApiQ1PodRestarts
@@ -29,6 +30,7 @@ spec:
             action: "Undersok logs, OOMKill og readiness/liveness-feil"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: warning
 
         - alert: OebsOmadaApiQ1High401Rate
@@ -47,6 +49,7 @@ spec:
             action: "Sjekk tokenvalidering, klientoppsett og nylige auth-endringer"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: warning
 
         - alert: OebsOmadaApiQ1High403Rate
@@ -65,6 +68,6 @@ spec:
             action: "Sjekk sikkerhetsregler, roller og klientidentitet"
           labels:
             namespace: team-oebs
+            team: team-oebs
             severity: warning
-
 
